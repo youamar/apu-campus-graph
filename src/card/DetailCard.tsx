@@ -131,7 +131,11 @@ export default function DetailCard({
 
         {c.vibeQuote ? (
           <blockquote className="dc-quote">
-            “{c.vibeQuote}” <cite>— Club member{c.sample ? ' · sample data' : ''}</cite>
+            “{c.vibeQuote}”
+            <cite>
+              — Club member
+              {c.sample && <SampleChip />}
+            </cite>
           </blockquote>
         ) : (
           <p className="dc-desc">
@@ -140,16 +144,21 @@ export default function DetailCard({
           </p>
         )}
 
-        <div className="dc-badges">
-          <span className={join.ok ? 'dc-badge ok' : 'dc-badge warn'} title={c.eligibility.note}>
+        <div className="dc-badges" role="list" aria-label={c.sample ? 'Highlights (sample data)' : 'Highlights'}>
+          <span role="listitem" className={join.ok ? 'dc-badge ok' : 'dc-badge warn'} title={c.eligibility.note}>
             {join.ok ? <Check /> : <Alert />}
             {join.ok ? `You can join · ${join.reason.replace(/^Open/, 'open')}` : `Ask first · ${join.reason}`}
           </span>
-          {c.beginnerFriendly && <span className="dc-badge info">Beginner-friendly</span>}
-          {c.recruiting && <span className="dc-badge hot">Recruiting now</span>}
+          {c.beginnerFriendly && <span role="listitem" className="dc-badge info">Beginner-friendly</span>}
+          {c.recruiting && <span role="listitem" className="dc-badge hot">Recruiting now</span>}
+          {c.sample && (c.beginnerFriendly || c.recruiting) && (
+            <span role="listitem" className="dc-badges-sample">
+              <SampleChip />
+            </span>
+          )}
         </div>
 
-        <Box title="Time commitment">
+        <Box title="Time commitment" chip={c.sample ? <SampleChip /> : undefined}>
           <div className="dc-hours">
             <strong className={c.hoursPerWeek ? undefined : 'dc-none'}>
               {c.hoursPerWeek ? prettyHours(c.hoursPerWeek) : 'Hours not published yet'}
@@ -206,7 +215,7 @@ export default function DetailCard({
       </div>
 
       <footer className="dc-actions">
-        <a className="dc-btn primary" href={href} target={external ? '_blank' : undefined} rel="noreferrer">
+        <a className="dc-btn primary" href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
           {joinLabel(c)}
           {external && <External />}
         </a>
@@ -218,7 +227,20 @@ export default function DetailCard({
             onClick={() => onToggleGoing(c.id)}
           >
             {going && <Check />}
-            {interested > 0 ? `Go together · ${interested} interested` : 'Go together'}
+            {interested > 0 ? (
+              <>
+                Go together ·{' '}
+                {c.sample ? (
+                  <span className="dc-sample-count" title="Sample data">
+                    {interested} interested{' '}<span className="dc-sr">(sample data)</span>
+                  </span>
+                ) : (
+                  `${interested} interested`
+                )}
+              </>
+            ) : (
+              'Go together'
+            )}
           </button>
           <button
             type="button"

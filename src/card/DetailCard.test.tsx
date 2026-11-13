@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { catalog } from '../data/catalog';
 import type { Profile } from '../profile/profile';
 import DetailCard from './DetailCard';
@@ -65,6 +65,28 @@ describe('DetailCard', () => {
       />,
     );
     expect(screen.getByRole('button', { name: /39 interested/ })).toBeInTheDocument();
+  });
+
+  it('tags every sample section of an enriched community', () => {
+    render(<DetailCard community={photo} profile={profile} onClose={noop} onToggleGoing={noop} onToggleWeek={noop} />);
+    const timeBox = screen.getByRole('heading', { name: 'Time commitment' }).closest('section')!;
+    expect(within(timeBox).getByText('Sample data')).toBeInTheDocument();
+    const quote = screen.getByText(/Golden hour at Bukit Jalil/).closest('blockquote')!;
+    expect(within(quote).getByText('Sample data')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Highlights (sample data)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /38 interested \(sample data\)/ })).toBeInTheDocument();
+  });
+
+  it('shows no Sample data tag for an unenriched community', () => {
+    render(<DetailCard community={kazakh} profile={null} onClose={noop} onToggleGoing={noop} onToggleWeek={noop} />);
+    expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
+  });
+
+  it('opens external join links with noopener noreferrer', () => {
+    render(<DetailCard community={photo} profile={null} onClose={noop} onToggleGoing={noop} onToggleWeek={noop} />);
+    const a = screen.getByRole('link', { name: /Join via Linktree/ });
+    expect(a).toHaveAttribute('target', '_blank');
+    expect(a).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('closes from the × button', () => {

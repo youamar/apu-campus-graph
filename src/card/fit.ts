@@ -82,11 +82,26 @@ export function scheduleCoverage(c: Community, p: Profile | null): number {
   return total > 0 ? covered / total : 0;
 }
 
+/** The URL if it parses as http(s), else null. Scraped links must never become javascript:/data: hrefs. */
+export function safeUrl(raw: string | undefined | null): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === 'http:' || u.protocol === 'https:' ? raw.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+const EMAIL = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+
+/** joinUrl → moreInfoUrl → mailto:email → Student Affairs subpage → Student Affairs index; unsafe values are skipped. */
 export function joinHref(c: Community): string {
-  if (c.joinUrl) return c.joinUrl;
-  if (c.moreInfoUrl) return c.moreInfoUrl;
-  if (c.email) return `mailto:${c.email}`;
-  return c.subpageUrl ?? STUDENT_AFFAIRS_URL;
+  const url = safeUrl(c.joinUrl) ?? safeUrl(c.moreInfoUrl);
+  if (url) return url;
+  const email = c.email?.trim();
+  if (email && EMAIL.test(email)) return `mailto:${email}`;
+  return safeUrl(c.subpageUrl) ?? STUDENT_AFFAIRS_URL;
 }
 
 /** Button label that says where the join link goes. */

@@ -1,7 +1,7 @@
 import { catalog } from '../data/catalog';
 import type { Community } from '../data/types';
 import type { Profile } from '../profile/profile';
-import { canJoin, joinHref, scheduleCoverage, timeFit } from './fit';
+import { canJoin, joinHref, safeUrl, scheduleCoverage, timeFit } from './fit';
 
 const photo = catalog.find((c) => c.id === 'apu-photography-club')!;
 const kazakh = catalog.find((c) => c.id === 'kazakh-community')!;
@@ -90,5 +90,31 @@ describe('joinHref', () => {
       'https://studentaffairs.apu.edu.my/international-communities/#kazakh',
     );
     expect(joinHref(base)).toBe('https://studentaffairs.apu.edu.my/club-and-society/');
+  });
+  it('skips a javascript: joinUrl and falls through to moreInfoUrl', () => {
+    expect(joinHref({ ...base, joinUrl: 'javascript:alert(1)', moreInfoUrl: 'https://linktr.ee/x' })).toBe(
+      'https://linktr.ee/x',
+    );
+  });
+  it('skips data: and malformed URLs', () => {
+    expect(joinHref({ ...base, joinUrl: 'data:text/html,hi', moreInfoUrl: 'not a url', email: 'a@b.co' })).toBe(
+      'mailto:a@b.co',
+    );
+  });
+  it('skips an invalid email', () => {
+    expect(joinHref({ ...base, email: 'bad email?subject=x' })).toBe('https://studentaffairs.apu.edu.my/club-and-society/');
+  });
+  it('ignores an unsafe subpage URL', () => {
+    expect(joinHref({ ...base, subpageUrl: 'javascript:void(0)' })).toBe('https://studentaffairs.apu.edu.my/club-and-society/');
+  });
+});
+
+describe('safeUrl', () => {
+  it('accepts only http and https', () => {
+    expect(safeUrl('https://a.b/c')).toBe('https://a.b/c');
+    expect(safeUrl('http://a.b')).toBe('http://a.b');
+    expect(safeUrl(' JavaScript:alert(1)')).toBeNull();
+    expect(safeUrl('ftp://a.b')).toBeNull();
+    expect(safeUrl(undefined)).toBeNull();
   });
 });
