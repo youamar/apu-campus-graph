@@ -1,0 +1,149 @@
+{
+  "communities": {
+    "apu-photography-club": {
+      "activity": 5, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Open to all APU students; bring any camera, phone is fine" },
+      "hoursPerWeek": "~2-3 hrs/week",
+      "schedule": [{ "day": "Fri", "start": "19:00", "end": "21:00" }],
+      "vibeQuote": "Golden hour at Bukit Jalil Park beats any lecture.",
+      "interested": 38,
+      "finePrint": { "fee": "RM 20 / semester", "register": "Google Form (link in @apu.pc bio)", "booking": "Booking needed for trips", "slots": "Photo walk max 25", "deadline": "20 Nov 2026", "source": "Instagram @apu.pc", "extractedAt": "2026-11-13", "sample": true }
+    },
+    "visual-cinematography-club-vcc": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "No gear needed to start" },
+      "hoursPerWeek": "~3 hrs/week",
+      "schedule": [{ "day": "Wed", "start": "18:00", "end": "20:00" }],
+      "vibeQuote": "We shoot short films on weekends and edit through the week.",
+      "interested": 27,
+      "finePrint": { "fee": "RM 15 / semester", "register": "Sign up at the club booth", "sample": true }
+    },
+    "movie-video-club-mvc": {
+      "activity": 3, "sample": true, "beginnerFriendly": true, "recruiting": false,
+      "eligibility": { "openToAll": true },
+      "hoursPerWeek": "~2 hrs/week",
+      "schedule": [{ "day": "Thu", "start": "19:30", "end": "21:30" }],
+      "vibeQuote": "Movie nights with strong opinions and cheap popcorn.",
+      "interested": 19,
+      "finePrint": { "fee": "Free", "register": "Walk in on movie night", "sample": true }
+    },
+    "travelling-club-trvc": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Trips need a signed indemnity form" },
+      "hoursPerWeek": "~1 hr/week plus trips",
+      "schedule": [{ "day": "Tue", "start": "17:00", "end": "18:00" }, { "day": "Sat", "start": "08:00", "end": "17:00" }],
+      "vibeQuote": "Cheap trips, good company, always one missed bus.",
+      "interested": 31,
+      "finePrint": { "fee": "RM 10 / semester + trip costs", "register": "Telegram group", "booking": "Booking needed per trip", "slots": "Trips cap at 30", "sample": true }
+    },
+    "apu-artificial-intelligence-club-aic": {
+      "activity": 5, "sample": true, "beginnerFriendly": false, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Basic Python helps" },
+      "hoursPerWeek": "~3-4 hrs/week",
+      "schedule": [{ "day": "Mon", "start": "18:00", "end": "20:00" }, { "day": "Sat", "start": "10:00", "end": "12:00" }],
+      "vibeQuote": "We train tiny models and argue about big ones.",
+      "interested": 40,
+      "finePrint": { "fee": "RM 20 / semester", "register": "Google Form", "slots": "Workshops cap at 40", "sample": true }
+    },
+    "aws-cloud-club": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Free AWS credits for members" },
+      "hoursPerWeek": "~2 hrs/week",
+      "schedule": [{ "day": "Wed", "start": "16:00", "end": "18:00" }],
+      "vibeQuote": "Ship something to the cloud before dinner.",
+      "interested": 29,
+      "finePrint": { "fee": "Free", "register": "Join via AWS Cloud Club portal", "sample": true }
+    },
+    "apu-dance-club": {
+      "activity": 5, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Audition only for the performance team" },
+      "hoursPerWeek": "~4 hrs/week",
+      "schedule": [{ "day": "Tue", "start": "19:00", "end": "21:00" }, { "day": "Thu", "start": "19:00", "end": "21:00" }],
+      "vibeQuote": "Two left feet are welcome. We were all there once.",
+      "interested": 36,
+      "finePrint": { "fee": "RM 30 / semester", "register": "Google Form", "slots": "Open class cap 30", "deadline": "27 Nov 2026", "sample": true }
+    },
+    "badminton-club": {
+      "activity": 5, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Bring your own racket" },
+      "hoursPerWeek": "~3 hrs/week",
+      "schedule": [{ "day": "Mon", "start": "20:00", "end": "22:00" }, { "day": "Fri", "start": "20:00", "end": "22:00" }],
+      "vibeQuote": "Smash first, apologise later.",
+      "interested": 33,
+      "finePrint": { "fee": "RM 25 / semester", "register": "Instagram DM @apu.badminton", "slots": "Courts limited to 24 players", "sample": true }
+    },
+    "esports-club": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Team tryouts by rank" },
+      "hoursPerWeek": "~5 hrs/week",
+      "schedule": [{ "day": "Wed", "start": "20:00", "end": "23:00" }, { "day": "Sun", "start": "14:00", "end": "17:00" }],
+      "vibeQuote": "Scrims, snacks, and a lot of shouting.",
+      "interested": 34,
+      "finePrint": { "fee": "RM 10 / semester", "register": "Discord", "sample": true }
+    },
+    "apu-indonesian-student-society-auiss": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": false,
+      "eligibility": { "openToAll": true, "note": "Everyone welcome, not only Indonesian students" },
+      "hoursPerWeek": "~2 hrs/week",
+      "schedule": [{ "day": "Fri", "start": "18:00", "end": "20:00" }],
+      "vibeQuote": "Come hungry. The food fair is the main event.",
+      "interested": 22,
+      "finePrint": { "fee": "Free", "register": "WhatsApp community", "sample": true }
+    },
+    "apu-music-club-amc": {
+      "activity": 4, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Instrument or voice, any level" },
+      "hoursPerWeek": "~3 hrs/week",
+      "schedule": [{ "day": "Tue", "start": "18:30", "end": "20:30" }],
+      "vibeQuote": "Jam sessions that somehow end in a setlist.",
+      "interested": 25,
+      "finePrint": { "fee": "RM 15 / semester", "register": "Google Form", "sample": true }
+    },
+    "apu-game-development-club-apugdc": {
+      "activity": 3, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true },
+      "hoursPerWeek": "~3 hrs/week",
+      "schedule": [{ "day": "Sat", "start": "13:00", "end": "16:00" }],
+      "vibeQuote": "Game jams where scope always explodes.",
+      "interested": 17,
+      "finePrint": { "fee": "Free", "register": "Discord", "deadline": "5 Dec 2026", "sample": true }
+    },
+    "tedxasia-pacific-u": {
+      "activity": 3, "sample": true, "beginnerFriendly": false, "recruiting": true,
+      "eligibility": { "openToAll": false, "note": "Organising team by interview" },
+      "hoursPerWeek": "~4 hrs/week",
+      "schedule": [{ "day": "Thu", "start": "17:00", "end": "19:00" }],
+      "vibeQuote": "Ideas worth spreading, deadlines worth sweating.",
+      "interested": 14,
+      "finePrint": { "fee": "Free", "register": "Application form and interview", "slots": "20 organiser seats", "deadline": "30 Nov 2026", "sample": true }
+    },
+    "mens-futsal-club": {
+      "activity": 4, "sample": true, "beginnerFriendly": false, "recruiting": false,
+      "eligibility": { "openToAll": false, "note": "Male students; tryouts each semester" },
+      "hoursPerWeek": "~4 hrs/week",
+      "schedule": [{ "day": "Wed", "start": "19:00", "end": "21:00" }, { "day": "Sun", "start": "17:00", "end": "19:00" }],
+      "vibeQuote": "Five-a-side, zero chill.",
+      "interested": 21,
+      "finePrint": { "fee": "RM 30 / semester", "register": "Tryout sign-up on Instagram", "sample": true }
+    },
+    "apu-china-students-association-apu-csa": {
+      "activity": 3, "sample": true, "beginnerFriendly": true, "recruiting": true,
+      "eligibility": { "openToAll": true, "note": "Mandarin practice partners welcome" },
+      "hoursPerWeek": "~2 hrs/week",
+      "schedule": [{ "day": "Sat", "start": "15:00", "end": "17:00" }],
+      "vibeQuote": "Hotpot nights and festival stalls.",
+      "interested": 18,
+      "finePrint": { "fee": "Free", "register": "WeChat group", "sample": true }
+    }
+  },
+  "events": [
+    { "id": "ev-badminton-social", "communityId": "badminton-club", "title": "Badminton social night", "place": "Sports Complex", "dayOffset": 0, "time": "20:00", "going": 18 },
+    { "id": "ev-photo-walk", "communityId": "apu-photography-club", "title": "Photo walk: Bukit Jalil Park", "place": "Meet at Atrium", "dayOffset": 0, "time": "17:30", "going": 24 },
+    { "id": "ev-indo-night", "communityId": "apu-indonesian-student-society-auiss", "title": "Indonesian Night food fair", "place": "Level 3 Atrium", "dayOffset": 0, "time": "19:00", "going": 61 },
+    { "id": "ev-ai-workshop", "communityId": "apu-artificial-intelligence-club-aic", "title": "Prompting 101 workshop", "place": "Lab 4-01", "dayOffset": 0, "time": "16:00", "going": 32 },
+    { "id": "ev-dance-open", "communityId": "apu-dance-club", "title": "Open dance class", "place": "Studio 2", "dayOffset": 0, "time": "18:30", "going": 27 },
+    { "id": "ev-esports-scrim", "communityId": "esports-club", "title": "Valorant scrim night", "place": "Esports Lounge", "dayOffset": 0, "time": "21:00", "going": 15 },
+    { "id": "ev-aws-talk", "communityId": "aws-cloud-club", "title": "Intro to serverless", "place": "Auditorium 2", "dayOffset": 1, "time": "16:00", "going": 29 },
+    { "id": "ev-music-jam", "communityId": "apu-music-club-amc", "title": "Open mic jam", "place": "Level 3 Atrium", "dayOffset": 1, "time": "18:00", "going": 20 }
+  ]
+}
