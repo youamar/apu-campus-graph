@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+.s{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+.n{font:900 300px/0.9 Roboto;letter-spacing:-.05em}
+.w{font:700 92px/1.1 Roboto;letter-spacing:-.025em;margin-top:18px}
+.s1{animation:slam .5s cubic-bezier(.2,.8,.2,1) 0s both, out .2s ease-in 1.8s forwards}
+.s2{animation:slam .45s cubic-bezier(.2,.8,.2,1) 2.0s both, out .2s ease-in 3.7s forwards}
+.s3{animation:slam .45s cubic-bezier(.2,.8,.2,1) 3.9s both, out .2s ease-in 5.6s forwards}
+.s4{animation:slam .45s cubic-bezier(.2,.8,.2,1) 5.8s both}
+.src{position:absolute;bottom:60px;left:0;right:0;text-align:center;font:400 24px 'Roboto Mono';color:var(--t3);letter-spacing:.06em;animation:rise .4s .4s both}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;animation:fl .3s var(--d) forwards}
+@keyframes fl{0%{opacity:0}10%{opacity:.3}100%{opacity:0}}
+.redglow{color:var(--live);text-shadow:0 0 50px rgba(224,74,90,.7),0 0 120px rgba(224,74,90,.4)}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="s s1"><div class="n blue glow" id="cnt">137</div><div class="w">clubs.</div></div>
+<div class="s s2"><div class="n redglow">0</div><div class="w">list a <span class="dim">fee.</span></div></div>
+<div class="s s3"><div class="n redglow">0</div><div class="w">have a <span class="dim">join link.</span></div></div>
+<div class="s s4"><div class="n" style="color:#ff8b33;text-shadow:0 0 50px rgba(255,139,51,.6)">8</div><div class="w">list when they <span class="dim">meet.</span></div></div>
+<div class="flash" style="--d:2.0s"></div><div class="flash" style="--d:3.9s"></div><div class="flash" style="--d:5.8s"></div>
+<div class="src">SOURCE · APU STUDENT AFFAIRS CLUB DIRECTORY</div>
+<div class="vignette"></div>
+<script src="common.js"></script><script>
+window.DURATION=7.8;
+const c=document.getElementById('cnt');
+window.draw=(ctx,t)=>{SC.drawStars(ctx,t,.6);c.textContent=Math.round(137*SC.ease(t/1.1));};
+</script></body></html>

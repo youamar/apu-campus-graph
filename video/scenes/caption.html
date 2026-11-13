@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+html,body{background:transparent}
+.cap{position:absolute;left:60px;bottom:64px;display:flex;align-items:center;gap:18px;padding:20px 34px 20px 26px;border-radius:999px;
+ background:rgba(8,10,14,.86);border:1px solid rgba(42,131,255,.45);box-shadow:0 0 0 1px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.6),0 0 50px -8px rgba(42,131,255,.6);
+ font:700 40px/1 Roboto;letter-spacing:-.01em;color:#fff}
+.cap i{width:16px;height:16px;border-radius:50%;background:var(--c,#2a83ff);box-shadow:0 0 16px 3px var(--c,#2a83ff)}
+.cap span{color:#b4b8c0;font-weight:400}
+.cap.top{bottom:auto;top:96px}
+</style></head><body><div class="cap" id="cap"><i></i><b id="t"></b><span id="s"></span></div>
+<script>const P=new URLSearchParams(location.search);document.getElementById('t').textContent=P.get('t');document.getElementById('s').textContent=P.get('s')?' '+P.get('s'):'';
+if(P.get('c'))document.getElementById('cap').style.setProperty('--c',P.get('c'));if(P.get('c'))document.getElementById('cap').style.borderColor=P.get('c');
+if(P.get('pos')==='top')document.getElementById('cap').classList.add('top');if(P.get('pos')==='right'){const c=document.getElementById('cap');c.style.left='auto';c.style.right='60px';}</script>
+</body></html>

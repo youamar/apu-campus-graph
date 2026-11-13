@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+.box{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding-bottom:40px}
+.t{font:900 140px/1 Roboto;letter-spacing:-.04em;animation:slam .7s cubic-bezier(.2,.8,.2,1) .1s both;text-shadow:0 0 40px rgba(42,131,255,.6),0 0 100px rgba(42,131,255,.35)}
+.tag{font:300 46px Roboto;color:#dfe6f0;animation:rise .5s .7s both}
+.tag b{font-weight:700;color:var(--pri)}
+.team{margin-top:36px;font:500 32px Roboto;animation:rise .5s 1.3s both}
+.team span{color:var(--t2);font-weight:400}
+.gh{font:500 30px 'Roboto Mono';color:#8fc0ff;animation:rise .5s 1.6s both;padding:12px 30px;border:1px solid rgba(42,131,255,.45);border-radius:999px;background:rgba(42,131,255,.1);box-shadow:0 0 40px -6px rgba(42,131,255,.5)}
+.built{position:absolute;bottom:56px;left:0;right:0;display:flex;justify-content:center;gap:18px;animation:rise .5s 1.9s both}
+.chip{display:inline-flex;align-items:center;gap:12px;padding:14px 26px;border-radius:999px;background:#191919;border:1px solid #2a2a2a;font:500 24px Roboto}
+.chip i{width:12px;height:12px;border-radius:50%}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="neb" style="left:460px;top:120px;width:1000px;height:700px;background:radial-gradient(circle,rgba(42,131,255,.16),transparent 65%)"></div>
+<div class="box">
+ <div class="t">APU Campus Graph</div>
+ <div class="tag">Every club. One living map. <b>Just ask.</b></div>
+ <div class="team">Team Vancomycin <span>· Chang Kai Yang &amp; Joseph Ang</span></div>
+ <div class="gh">github.com/youamar/apu-campus-graph</div>
+</div>
+<div class="built"><span class="chip"><i style="background:#2a83ff;box-shadow:0 0 10px #2a83ff"></i>Built with Gemini + Google Cloud</span><span class="chip"><i style="background:#42ba96"></i>React · Cloud Run</span><span class="chip"><i style="background:#ff8b33"></i>APU Cloud Innovation Hackathon 2026</span></div>
+<div class="vignette"></div>
+<script src="common.js"></script><script>
+window.DURATION=7;
+window.draw=(ctx,t)=>{SC.drawStars(ctx,t,.8);SC.drawGraph(ctx,t,1,{alpha:.3,scale:1.25+0.05*t/7,oy:20});};
+</script></body></html>

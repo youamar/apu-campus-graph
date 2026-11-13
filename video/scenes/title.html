@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+.box{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:0 140px}
+.w{display:inline-block;animation:wd .45s cubic-bezier(.2,.8,.2,1) var(--d) both}
+@keyframes wd{0%{opacity:0;transform:translateY(40px) scale(1.15);filter:blur(12px)}100%{opacity:1;transform:none;filter:blur(0)}}
+.line{font:900 120px/1.08 Roboto;letter-spacing:-.035em}
+.line.small{font-size:96px}
+.bar{width:0;height:4px;border-radius:2px;background:var(--pri);box-shadow:0 0 20px var(--pri);animation:grow .8s cubic-bezier(.2,.8,.2,1) .25s both}
+@keyframes grow{to{width:220px}}
+.out{position:absolute;inset:0;animation:out .25s ease-in var(--o) forwards}
+.og{text-shadow:0 0 40px rgba(255,139,51,.55),0 0 90px rgba(255,139,51,.3)}
+.gg{text-shadow:0 0 40px rgba(66,186,150,.55),0 0 90px rgba(66,186,150,.3)}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="neb" id="neb" style="left:410px;top:190px;width:1100px;height:700px"></div>
+<div class="out"><div class="box"><div class="eyebrow" id="eb"></div><div id="lines"></div><div class="bar" id="bar"></div></div></div>
+<script>
+const P=new URLSearchParams(location.search);
+const T={
+ ask:{eb:'Ask APU · powered by Gemini',lines:[['Ask in your',''],['own words.','blue glow']],c:'42,131,255',d:2.2},
+ map:{eb:'Live campus graph',lines:[['The map',''],['answers.','blue glow']],c:'42,131,255',d:2.0},
+ star:{eb:'Events',lines:[['Brighter star =',''],["something's coming.",'orange og']],c:'255,139,51',d:2.4},
+ join:{eb:'The fine print, up front',lines:[['Can I join?','blue glow'],['Will it fit my week?','green gg'],['What does it cost?','orange og']],c:'42,131,255',d:3.2,small:1},
+ go:{eb:'Your first step',lines:[['Go','green gg'],['together.','']],c:'66,186,150',d:2.0},
+};
+const s=T[P.get('id')||'ask'];
+document.getElementById('eb').textContent=s.eb;
+document.getElementById('neb').style.background='radial-gradient(circle,rgba('+s.c+',.22),transparent 65%)';
+document.querySelector('.out').style.setProperty('--o',(s.d-0.25)+'s');
+let d=0.1;const L=document.getElementById('lines');
+s.lines.forEach(function(l){const div=document.createElement('div');div.className='line'+(s.small?' small':'');
+ l[0].split(' ').forEach(function(w){const sp=document.createElement('span');sp.className='w '+l[1];sp.style.setProperty('--d',d+'s');sp.textContent=w;div.appendChild(sp);div.appendChild(document.createTextNode(' '));d+=s.small?0.14:0.12;});
+ L.appendChild(div);d+=s.small?0.25:0.1;});
+window.DURATION=s.d;
+</script>
+<script src="common.js"></script><script>
+window.draw=function(ctx,t){SC.drawStars(ctx,t,.7);if(P.get('id')==='star'){SC.drawGraph(ctx,t,1,{alpha:.2,scale:1.4});}};
+</script></body></html>

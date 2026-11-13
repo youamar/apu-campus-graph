@@ -6,3 +6,7 @@ dist-server
 .claude/
 .env.*
 !.env.example
+video/raw/
+video/clips/
+video/node_modules/
+video/frames/

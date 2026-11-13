@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+.q{position:absolute;left:0;right:0;top:110px;text-align:center}
+.a{display:inline-block;animation:rise .6s cubic-bezier(.2,.8,.2,1) .2s both}
+.b{display:inline-block;animation:slam .6s cubic-bezier(.2,.8,.2,1) 1.5s both}
+.wrap{position:absolute;inset:0;animation:out .4s ease-in 4.4s forwards}
+.intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}
+.intro .e{animation:rise .5s 4.9s both}
+.intro .t{font:900 150px/1 Roboto;letter-spacing:-.04em;animation:slam .7s cubic-bezier(.2,.8,.2,1) 5.1s both;text-shadow:0 0 40px rgba(42,131,255,.6),0 0 110px rgba(42,131,255,.35)}
+.intro .sub{font:300 42px Roboto;color:#dfe6f0;animation:rise .5s 5.7s both}
+.intro .sub b{font-weight:700;color:var(--pri)}
+.lg{position:absolute;bottom:70px;left:0;right:0;display:flex;justify-content:center;gap:40px;font:500 24px Roboto;color:var(--t2);animation:rise .5s 2.8s both}
+.lg i{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:10px;vertical-align:-1px}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="wrap"><div class="q mid"><span class="a">What if campus just…</span> <span class="b blue glow">told you?</span></div>
+<div class="lg"><span><i style="background:#2a83ff;box-shadow:0 0 12px #2a83ff"></i>Societies & SIGs</span><span><i style="background:#42ba96;box-shadow:0 0 12px #42ba96"></i>Sports</span><span><i style="background:#ff8b33;box-shadow:0 0 12px #ff8b33"></i>International</span><span><i style="background:#e04a5a;box-shadow:0 0 12px #e04a5a"></i>Happening today</span></div></div>
+<div class="intro"><div class="eyebrow e">Introducing</div><div class="t">APU Campus Graph</div><div class="sub">Every club. One living map. <b>Just ask.</b></div></div>
+<script src="common.js"></script><script>
+window.DURATION=8.0;
+window.draw=(ctx,t)=>{SC.drawStars(ctx,t,.7);
+ const p=SC.ease((t-0.2)/3.2);
+ const fade=t<4.4?1:Math.max(0.25,1-(t-4.4)/0.8);
+ const sc=1+0.08*SC.ease(t/8);
+ SC.drawGraph(ctx,t,p,{oy:50,scale:sc,alpha:fade});};
+</script></body></html>

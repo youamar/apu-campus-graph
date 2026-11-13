@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><style>
+.phone{position:absolute;left:330px;top:44px;width:476px;height:992px;border-radius:56px;background:#0c0c0c;border:2px solid #2f2f2f;
+ box-shadow:0 0 0 10px #151515,0 0 120px -10px rgba(42,131,255,.45),0 40px 100px rgba(0,0,0,.9);animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+.txt{position:absolute;left:960px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:26px}
+.e{animation:rise .5s .3s both}
+.h{font:900 104px/1.02 Roboto;letter-spacing:-.035em;animation:rise .6s .45s both}
+.p{font:300 40px/1.35 Roboto;color:#dfe6f0;animation:rise .6s .7s both}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="neb" style="left:120px;top:140px;width:900px;height:800px;background:radial-gradient(circle,rgba(42,131,255,.2),transparent 65%)"></div>
+<div class="phone"></div>
+<div class="txt"><div class="eyebrow e">Inside APSpace · on your phone</div><div class="h">Campus,<br><span class="blue glow">in your pocket.</span></div><div class="p">Tap a live event.<br>See who's going. Just show up.</div></div>
+<script src="common.js"></script><script>
+window.DURATION=6.5;
+window.draw=(ctx,t)=>{SC.drawStars(ctx,t,.8)};
+</script></body></html>
