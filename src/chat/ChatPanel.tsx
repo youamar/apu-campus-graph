@@ -6,7 +6,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import type { GuideReply } from '../../shared/guide';
@@ -42,6 +42,15 @@ export function happeningToday(events: CampusEvent[], now: Date, max = 3): Campu
     })
     .sort((a, b) => a.start.localeCompare(b.start))
     .slice(0, max);
+}
+
+/**
+ * How far (px) the on-screen keyboard covers the bottom of the layout viewport:
+ * innerHeight − visualViewport.height − visualViewport.offsetTop, never negative.
+ */
+export function keyboardOverlap(innerHeight: number, vvHeight: number, vvOffsetTop: number): number {
+  const v = Math.round(innerHeight - vvHeight - vvOffsetTop);
+  return Number.isFinite(v) && v > 0 ? v : 0;
 }
 
 /** Drag distance (px) that snaps the bottom sheet to the other state. */
@@ -115,6 +124,11 @@ export default function ChatPanel({
   const [dragH, setDragH] = useState<number | null>(null);
   const asideRef = useRef<HTMLElement>(null);
   const drag = useRef<{ id: number; y0: number; h0: number; moved: boolean } | null>(null);
+  /** The last gesture was a real drag: swallow the click it ends with. */
+  const dragged = useRef(false);
+  /** The field has focus in sheet mode; the sheet then follows the on-screen keyboard. */
+  const [typing, setTyping] = useState(false);
+  const [kb, setKb] = useState(0);
   const isOpen = sheet && expanded;
 
   const inConvo = messages.length > 0;
@@ -142,6 +156,24 @@ export default function ChatPanel({
     wasPending.current = pending;
   }, [pending]);
 
+  // While typing in the sheet, lift it by the part of the layout viewport the keyboard covers
+  // (iOS overlays the keyboard; Android with interactive-widget=resizes-content reports 0).
+  useEffect(() => {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!sheet || !typing || !vv) {
+      setKb(0);
+      return;
+    }
+    const update = () => setKb(keyboardOverlap(window.innerHeight, vv.height, vv.offsetTop));
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, [sheet, typing]);
+
   // Grow the field with its content, up to a few lines.
   useEffect(() => {
     const el = inputRef.current;
@@ -159,10 +191,13 @@ export default function ChatPanel({
     e.preventDefault();
     submit(draft);
   };
-  // Sheet drag: follow the finger, then snap open or closed by direction; a tap toggles.
-  // The pointer is captured at once because the sheet can shift under it (the field blurs, the tab bar returns).
+  // Sheet drag: follow the finger, then snap open or closed by direction. Every click on the grab area
+  // (mouse, touch tap, keyboard, screen reader or switch) toggles, except the click a real drag ends with.
+  // The pointer is captured at once so that click still lands here if the sheet shifts under the finger
+  // (the field blurs and the tab bar returns).
   const onGrabDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!sheet || !asideRef.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    dragged.current = false;
     drag.current = { id: e.pointerId, y0: e.clientY, h0: asideRef.current.getBoundingClientRect().height, moved: false };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
@@ -177,20 +212,20 @@ export default function ChatPanel({
   const onGrabUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     drag.current = null;
-    if (!d || d.id !== e.pointerId) return;
+    if (!d || d.id !== e.pointerId || !d.moved) return;
+    dragged.current = true;
     setDragH(null);
     if (e.type === 'pointercancel') return;
-    if (!d.moved) {
-      setExpanded((x) => !x);
-      return;
-    }
     const dy = e.clientY - d.y0;
     if (dy < -SNAP_PX) setExpanded(true);
     else if (dy > SNAP_PX) setExpanded(false);
   };
-  /** Keyboard activation of the handle (pointer taps are handled on pointerup). */
-  const onHandleClick = (e: ReactMouseEvent) => {
-    if (e.detail === 0) setExpanded((x) => !x);
+  const onGrabClick = () => {
+    if (dragged.current) {
+      dragged.current = false;
+      return;
+    }
+    setExpanded((x) => !x);
   };
 
   // On a phone a card or event covers the map; drop the sheet so the map is there when it closes.
@@ -273,7 +308,7 @@ export default function ChatPanel({
       ref={asideRef}
       className={cls.join(' ')}
       aria-label="Ask APU, campus guide"
-      style={dragH !== null ? { height: dragH } : undefined}
+      style={{ ...(dragH !== null ? { height: dragH } : null), ...(kb ? { '--kb': `${kb}px` } : null) } as CSSProperties}
     >
       {sheet ? (
         <div
@@ -282,8 +317,9 @@ export default function ChatPanel({
           onPointerMove={onGrabMove}
           onPointerUp={onGrabUp}
           onPointerCancel={onGrabUp}
+          onClick={onGrabClick}
         >
-          <button type="button" className="sheet-handle" onClick={onHandleClick} aria-expanded={expanded} aria-label={expanded ? 'Collapse chat' : 'Expand chat'}>
+          <button type="button" className="sheet-handle" aria-expanded={expanded} aria-label={expanded ? 'Collapse chat' : 'Expand chat'}>
             <span aria-hidden="true" />
           </button>
           {head}
@@ -377,6 +413,8 @@ export default function ChatPanel({
       <form className="chat-input" onSubmit={onSubmit}>
         <textarea
           ref={inputRef}
+          onFocus={() => setTyping(true)}
+          onBlur={() => setTyping(false)}
           rows={1}
           value={draft}
           disabled={pending}

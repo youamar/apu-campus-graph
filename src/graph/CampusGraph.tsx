@@ -22,6 +22,7 @@ import { CATEGORY_COLOR, CATEGORY_NAME, capFocusZoom, labelSide, layoutNodes, ma
 import Legend from './Legend';
 import LiveTicker from './LiveTicker';
 import { toGraph } from './model';
+import { MOBILE_QUERY, useMediaQuery } from '../useMediaQuery';
 
 export interface CampusGraphProps {
   focusIds: string[];
@@ -60,6 +61,7 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [activeFocus, setActiveFocus] = useState<string[]>(focusIds);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   const data = useMemo(() => {
     const g = toGraph(catalog, events);
@@ -453,8 +455,8 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
             if (focusRef.current.length) zoomToFocus(focusRef.current);
             else fitAll(0);
           }}
-          // Low floor so a phone-width portrait canvas can still fit the whole graph.
-          minZoom={0.15}
+          // Phones need a low floor so the portrait canvas can fit the whole graph; desktop keeps 0.4.
+          minZoom={isMobile ? 0.15 : 0.4}
           maxZoom={8}
           showPointerCursor={(o) => !!o && (o as PNode).kind === 'community'}
           onNodeHover={(n) => setHoverId(n && n.kind === 'community' ? n.id : null)}

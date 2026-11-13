@@ -283,7 +283,8 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
   /* Typing: the keyboard takes the tab bar's place, so the sheet rides on it. */
   .app:has(.sheet .chat-input textarea:focus) .tabbar { display: none; }
   .app:has(.sheet .chat-input textarea:focus) .side-panel.chat.sheet {
-    bottom: 0; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    /* --kb: keyboard overlap from visualViewport (ChatPanel), 0 where the browser resizes the page instead. */
+    bottom: var(--kb, 0px); padding-bottom: calc(10px + env(safe-area-inset-bottom));
   }
 
   /* Detail card: a full-height sheet over everything but the profile sheet (.app outranks card.css). */

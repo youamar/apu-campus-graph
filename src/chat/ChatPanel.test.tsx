@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { GuideReply } from '../../shared/guide';
 import { catalog } from '../data/catalog';
 import type { CampusEvent } from '../data/types';
-import ChatPanel, { happeningToday, TRY_ASKING } from './ChatPanel';
+import ChatPanel, { happeningToday, keyboardOverlap, TRY_ASKING } from './ChatPanel';
 
 const at = (h: number, m = 0) => {
   const d = new Date();
@@ -99,6 +99,22 @@ describe('ChatPanel', () => {
       expect(aside).toHaveClass('collapsed');
     });
 
+    it('any click on the handle toggles (mouse, tap, screen reader), but the click ending a drag does not', () => {
+      const { aside } = sheetSetup();
+      fireEvent.click(screen.getByRole('button', { name: 'Expand chat' }), { detail: 1 });
+      expect(aside).toHaveClass('expanded');
+      fireEvent.click(screen.getByRole('button', { name: 'Collapse chat' }), { detail: 1 });
+      expect(aside).toHaveClass('collapsed');
+
+      // Drag up 120px: snaps open once; the trailing click must not toggle it back.
+      const handle = screen.getByRole('button', { name: 'Expand chat' });
+      fireEvent.pointerDown(handle, { pointerId: 1, clientY: 700, button: 0, pointerType: 'touch' });
+      fireEvent.pointerMove(handle, { pointerId: 1, clientY: 640, pointerType: 'touch' });
+      fireEvent.pointerUp(handle, { pointerId: 1, clientY: 580, pointerType: 'touch' });
+      fireEvent.click(handle, { detail: 1 });
+      expect(aside).toHaveClass('expanded');
+    });
+
     it('a quick prompt sends, the peek previews the reply, and opening a match drops the sheet', async () => {
       const { props, aside } = sheetSetup();
       fireEvent.click(within(screen.getByRole('group', { name: 'Quick questions' })).getByRole('button', { name: TRY_ASKING[0] }));
@@ -112,5 +128,16 @@ describe('ChatPanel', () => {
       expect(props.onOpen).toHaveBeenCalledWith('apu-photography-club');
       expect(aside).toHaveClass('collapsed');
     });
+  });
+});
+
+describe('keyboardOverlap', () => {
+  it('is the layout height the visual viewport loses at the bottom, never negative', () => {
+    expect(keyboardOverlap(844, 844, 0)).toBe(0); // no keyboard
+    expect(keyboardOverlap(844, 508, 0)).toBe(336); // iOS keyboard overlays the page
+    expect(keyboardOverlap(844, 508, 40)).toBe(296); // page scrolled up inside the visual viewport
+    expect(keyboardOverlap(508, 508, 0)).toBe(0); // Android resizes the page instead
+    expect(keyboardOverlap(844, 900, 0)).toBe(0); // pinch-zoom / rounding never goes negative
+    expect(keyboardOverlap(844, 507.6, 0)).toBe(336);
   });
 });
