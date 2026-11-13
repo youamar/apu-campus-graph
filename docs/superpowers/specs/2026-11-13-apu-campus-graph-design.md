@@ -13,6 +13,13 @@ APU's clubs are listed at studentaffairs.apu.edu.my, but students still don't jo
 
 The underlying problem is that **the campus feels cold, and nothing pulls students in.** The data backs this up: of the 137 listed communities, none states a fee, a join link or any rules, and only 8 mention meeting times.
 
+### Pitch framing (user, 2026-11-13, takes priority for the deck and video)
+1. **Primary problem: information.** The information online is incomplete. Students have to do a lot of research to find out what a club is, whether they can join, what it costs and when it meets. The idea is a site that **tells the student directly**, and also **shows what is going to happen next**: clubs with upcoming events glow as brighter stars on the map.
+2. **Second problem: atmosphere.** The site should create a great atmosphere and encourage students to take part in university activities, starting with their first one.
+
+### Feature added from this framing
+- **G1b "Brighter stars":** communities with an upcoming event in the next 7 days glow brighter, and the closer the event, the brighter the glow. Today's events keep the pulse rings. The legend explains: "Brighter star = event coming up".
+
 ## What it is
 
 A single page in APSpace's look:
