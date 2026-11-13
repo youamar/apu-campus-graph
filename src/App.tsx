@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GuideReply } from '../shared/guide';
 import DetailCard from './card/DetailCard';
-import { catalog } from './data/catalog';
+import ChatPanel from './chat/ChatPanel';
+import { catalog, events } from './data/catalog';
+import type { CampusEvent } from './data/types';
 import CampusGraph, { type CampusGraphHandle } from './graph/CampusGraph';
 import type { GraphFilter } from './graph/layout';
 import { emptyProfile, loadProfile, saveProfile, toggleId, type Profile } from './profile/profile';
@@ -68,8 +71,25 @@ export default function App() {
     if (profile) saveProfile(profile);
   }, [profile]);
 
-  /** Opens the profile sheet. Task 8's chat calls this after the first message. */
+  /** Opens the profile sheet (toolbar avatar, card, and the chat's first-reply prompt). */
   const openProfile = useCallback(() => setProfileOpen(true), []);
+
+  /** Focus the graph through the focusIds prop, the same path as ?focus=, so breadcrumb and hint show. */
+  const focusGraph = useCallback((ids: string[]) => setFocusIds([...ids]), []);
+  const onGuideReply = useCallback(
+    (r: GuideReply) => {
+      if (r.focusIds.length) focusGraph(r.focusIds);
+      if (r.openId) setSelectedId(r.openId);
+    },
+    [focusGraph],
+  );
+  const onEvent = useCallback(
+    (ev: CampusEvent) => {
+      focusGraph([ev.communityId]);
+      setSelectedId(ev.communityId);
+    },
+    [focusGraph],
+  );
   const closeCard = useCallback(() => setSelectedId(null), []);
   const toggleGoing = useCallback(
     (id: string) => setProfile((p) => {
@@ -160,7 +180,15 @@ export default function App() {
             </div>
           )}
         </section>
-        <aside className="side-panel" aria-label="Campus guide" />
+        <ChatPanel
+          catalog={catalog}
+          events={events}
+          profile={profile}
+          onReply={onGuideReply}
+          onEvent={onEvent}
+          onOpen={setSelectedId}
+          onEditProfile={openProfile}
+        />
       </main>
       {profileOpen && (
         <ProfileSheet
