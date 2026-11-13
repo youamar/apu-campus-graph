@@ -33,6 +33,23 @@ describe('buildSystemPrompt', () => {
     for (const p of presidents) expect(prompt).not.toContain(p);
   });
 
+  it('describes what each club does and how to join', () => {
+    const photo = catalog.find((c) => c.id === 'apu-photography-club')!;
+    expect(photo.description.length).toBeGreaterThan(10);
+    expect(prompt).toContain(photo.description.slice(0, 60));
+    const line = prompt.split('\n').find((l) => l.startsWith('apu-photography-club |'))!;
+    expect(line).toMatch(/join: /);
+    expect(line).toMatch(/beginner-friendly/);
+    expect(line).toMatch(/recruiting/);
+  });
+
+  it('caps long descriptions', () => {
+    const long = { ...catalog[0], id: 'long-one', description: 'word '.repeat(200), finePrint: undefined, joinUrl: 'https://x.test/join' };
+    const line = buildSystemPrompt([long], []).split('\n').find((l) => l.startsWith('long-one |'))!;
+    expect(line.length).toBeLessThan(600);
+    expect(line).toContain('join: via https://x.test/join');
+  });
+
   it('carries the grounding rules', () => {
     expect(prompt).toMatch(/only from the CATALOG/i);
     expect(prompt).toMatch(/Never invent communities, fees or dates/i);

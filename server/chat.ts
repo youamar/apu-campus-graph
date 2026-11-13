@@ -53,40 +53,69 @@ Rules:
 - suggestions: exactly 3 short follow-up questions the user could ask next.
 - The user's turn may start with a [Student profile] block; use it to rank by interests and free times, but do not repeat it back.
 
-The catalog is serialised one line per community: id | name | category | tags | eligibility | hours | schedule | finePrint`;
+The catalog is serialised one line per community: id | name | category | tags | description | eligibility | hours | schedule | join | flags | finePrint
+- Use description to explain what a community does, and join to say how to join. Links in join are official club channels; you may share them.`;
 
 const CATEGORY: Record<Community['category'], string> = { soc: 'society', spo: 'sports', intl: 'international' };
 const slotText = (s: Slot) => `${s.day} ${s.start}-${s.end}`;
 const clean = (s: string) => s.replace(/[|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 
+const DESCRIPTION_MAX = 160;
+
+function truncate(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max - 1);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut) + '…';
+}
+
+/**
+ * How to join: the fine-print registration step if known, else the first public club link/handle.
+ * These are club channels (join form, info page, club Instagram, club mailbox), never a person's details.
+ */
+function joinText(c: Community): string {
+  const sampleTag = c.sample ? ' (sample)' : '';
+  const via = c.joinUrl ?? c.moreInfoUrl ?? c.instagram ?? c.email;
+  if (c.finePrint?.register) {
+    // The register step may be sample enrichment; the scraped link is real, so keep it alongside.
+    return c.finePrint.register + (c.finePrint.sample ? ' (sample)' : sampleTag) + (via ? `; link: ${via}` : '');
+  }
+  return via ? `via ${via}` : 'ask Student Affairs';
+}
+
 function communityLine(c: Community): string {
+  const sampleTag = c.sample ? ' (sample)' : '';
   const elig = (c.eligibility.openToAll ? 'open to all' : 'restricted') + (c.eligibility.note ? `: ${c.eligibility.note}` : '');
   const fp = c.finePrint;
   let fine = '-';
   if (fp) {
-    const parts = (['fee', 'register', 'booking', 'slots', 'deadline'] as const)
+    const parts = (['fee', 'booking', 'slots', 'deadline'] as const)
       .filter((k) => fp[k])
       .map((k) => `${k}: ${fp[k]}`);
     if (parts.length) fine = parts.join('; ') + (fp.sample ? ' (sample)' : '');
   }
+  const flags = [c.beginnerFriendly ? 'beginner-friendly' : '', c.recruiting ? 'recruiting' : ''].filter(Boolean);
   const fields = [
     c.id,
     c.name,
     CATEGORY[c.category],
     c.tags.join(', '),
+    c.description ? truncate(clean(c.description), DESCRIPTION_MAX) : '-',
     elig,
-    c.hoursPerWeek ? c.hoursPerWeek + (c.sample ? ' (sample)' : '') : '-',
-    c.schedule?.length ? c.schedule.map(slotText).join(', ') + (c.sample ? ' (sample)' : '') : '-',
+    c.hoursPerWeek ? c.hoursPerWeek + sampleTag : '-',
+    c.schedule?.length ? c.schedule.map(slotText).join(', ') + sampleTag : '-',
+    `join: ${joinText(c)}`,
+    flags.length ? flags.join(', ') + sampleTag : '-',
     fine,
   ].map((f) => clean(String(f)));
-  return fields.join(' | ') + (c.sample ? ' [sample: eligibility, hours, schedule and fine print are examples]' : '');
+  return fields.join(' | ') + (c.sample ? ' [sample: eligibility, hours, schedule, join steps, flags and fine print are examples]' : '');
 }
 
 function eventLine(e: CampusEvent): string {
   return [e.communityId, e.title, e.place, e.start].map(clean).join(' | ') + (e.sample ? ' [sample]' : '');
 }
 
-/** Only the fields named above are serialised: no president, advisor or contact data reaches the model. */
+/** Only the fields named above are serialised: president and advisor names never reach the model; join links are club channels. */
 export function buildSystemPrompt(catalog: Community[], events: CampusEvent[]): string {
   const lines = [RULES, '', `CATALOG (${catalog.length} communities):`, ...catalog.map(communityLine)];
   if (events.length) {
@@ -174,7 +203,7 @@ export function sanitizeProfile(p: unknown): Profile | null {
 }
 
 export function profileSummary(p: Profile): string {
-  const interests = p.interests.length ? p.interests.join(', ') : 'none set';
+  const interests = p.interests.length ? p.interests.map(clean).filter(Boolean).join(', ') : 'none set';
   const free = p.free.length ? p.free.map(slotText).join(', ') : 'not set';
   return `[Student profile] Year ${p.year}, ${p.level}; interests: ${interests}; free times: ${free}`;
 }
