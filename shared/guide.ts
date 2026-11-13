@@ -116,20 +116,23 @@ export function localMatch(query: string, catalog: Community[], profile: Profile
     .map((s) => s.c);
 
   // openId: only when the query contains a community's full name or shortName as a
-  // word-bounded phrase ("apu" prefix optional). Longest wins; a tie means ambiguous.
+  // word-bounded phrase ("apu" prefix optional). If several distinct communities match,
+  // openId is null, unless every other match's phrase is nested inside the longest one.
   const qJoined = ' ' + qWords.join(' ') + ' ';
   const stripApu = (w: string[]) => (w[0] === 'apu' ? w.slice(1) : w);
-  let open: Community | null = null;
-  let openLen = 0;
-  let tied = false;
+  const hits: { c: Community; ph: string }[] = [];
   for (const c of catalog) {
     const phrases = [c.name.replace(/\([^)]*\)/g, ''), c.shortName].map((n) => stripApu(words(n)).join(' ')).filter(Boolean);
-    const len = Math.max(0, ...phrases.filter((ph) => qJoined.includes(' ' + ph + ' ')).map((ph) => ph.length));
-    if (!len) continue;
-    if (len > openLen) { open = c; openLen = len; tied = false; }
-    else if (len === openLen && open && open.id !== c.id) tied = true;
+    const matched = phrases.filter((ph) => qJoined.includes(' ' + ph + ' '));
+    if (matched.length) hits.push({ c, ph: matched.reduce((x, y) => (y.length > x.length ? y : x)) });
   }
-  if (tied) open = null;
+  hits.sort((x, y) => y.ph.length - x.ph.length);
+  let open: Community | null = null;
+  if (hits.length) {
+    const best = hits[0];
+    const nested = hits.slice(1).every((h) => h.c.id === best.c.id || best.ph.includes(h.ph));
+    if (nested) open = best.c;
+  }
 
   const focusIds = top.map((c) => c.id);
   if (open && !focusIds.includes(open.id)) focusIds.unshift(open.id);

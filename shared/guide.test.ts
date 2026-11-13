@@ -19,6 +19,9 @@ describe('localMatch', () => {
     expect(localMatch('I love photography and want friends', catalog, null).reply).not.toContain('opened');
     expect(localMatch('sports and music', catalog, null).openId).toBeNull();
   });
+  it('does not open a card when two communities are named', () => {
+    expect(localMatch('Photography Club and Badminton Club', catalog, null).openId).toBeNull();
+  });
   it('handles no match', () => {
     const r = localMatch('zzzz', catalog, null);
     expect(r.focusIds).toEqual([]);
