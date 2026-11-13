@@ -50,6 +50,21 @@ describe('buildSystemPrompt', () => {
     expect(line).toContain('join: via https://x.test/join');
   });
 
+  it('tells the model to hedge sample join steps and fine print', () => {
+    const rules = prompt.slice(0, prompt.indexOf('CATALOG ('));
+    expect(rules).toMatch(/sample/i);
+    for (const word of ['join', 'fee', 'deadline', 'slots', 'eligibility']) expect(rules).toMatch(new RegExp(word, 'i'));
+    expect(rules).toMatch(/for example/i);
+    expect(rules).toMatch(/never .*real procedure/i);
+  });
+
+  it('tags a sample club join step as (sample) and keeps its real link', () => {
+    const line = prompt.split('\n').find((l) => l.startsWith('apu-photography-club |'))!;
+    const join = line.split(' | ').find((f) => f.startsWith('join: '))!;
+    expect(join).toContain('(sample)');
+    expect(join).toMatch(/link: https:\/\//);
+  });
+
   it('carries the grounding rules', () => {
     expect(prompt).toMatch(/only from the CATALOG/i);
     expect(prompt).toMatch(/Never invent communities, fees or dates/i);

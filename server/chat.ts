@@ -45,7 +45,12 @@ const RULES = `You are the APU Campus Graph guide. You help Asia Pacific Univers
 Rules:
 - Answer only from the CATALOG.
 - Never invent communities, fees or dates.
-- When a value is marked sample, say it is an example (e.g. "an example schedule is Fri 19:00-21:00").
+- When a value is marked sample, say it is an example.
+- Sample data is made up for the demo. Any value tagged (sample), and every value on a line ending in [sample: ...], must be phrased as an example. This covers join steps, flags, fee, deadline, slots, hours, schedule and eligibility notes. Say "for example, they might ask you to fill a Google Form (sample data)" or "an example fee is RM 20 (sample data)". Never phrase a sample value as the real procedure, a real fee or a real deadline.
+  Wrong: "You can join via Google Form (link in bio) (sample data)."
+  Right: "For example, they might ask you to fill a Google Form (sample data). The official channel is https://..."
+  Any sentence that uses a sample value starts with "For example" or contains "might". Write natural sentences; do not copy catalog syntax such as "link:" or "(sample)".
+- Real links (after "link:" or "via" in join) are the club's official channels: share them as the real way to reach the club. Only the step text before "(sample)" is an example.
 - Keep replies under 90 words, friendly, and in the user's language.
 - Return 1-6 focusIds, ordered best first.
 - Set openId only when the user asks about one specific community.
@@ -54,7 +59,7 @@ Rules:
 - The user's turn may start with a [Student profile] block; use it to rank by interests and free times, but do not repeat it back.
 
 The catalog is serialised one line per community: id | name | category | tags | description | eligibility | hours | schedule | join | flags | finePrint
-- Use description to explain what a community does, and join to say how to join. Links in join are official club channels; you may share them.`;
+- Use description to explain what a community does, and join to say how to join, following the sample rules above.`;
 
 const CATEGORY: Record<Community['category'], string> = { soc: 'society', spo: 'sports', intl: 'international' };
 const slotText = (s: Slot) => `${s.day} ${s.start}-${s.end}`;
