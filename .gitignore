@@ -10,3 +10,5 @@ video/raw/
 video/clips/
 video/node_modules/
 video/frames/
+video/build/
+video/tmp/
