@@ -1,3 +1,4 @@
+import { hintText } from './hint';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { catalog, events } from '../data/catalog';
@@ -26,6 +27,8 @@ import { MOBILE_QUERY, useMediaQuery } from '../useMediaQuery';
 
 export interface CampusGraphProps {
   focusIds: string[];
+  /** Who triggered the focus: 'ai' only for a Gemini guide reply. */
+  focusSource?: 'ai' | 'user';
   selectedId: string | null;
   filter: CategoryKey | 'all' | 'today';
   onSelect(id: string): void;
@@ -53,7 +56,7 @@ const FOCUS_MAX_ZOOM = 3.2;
 const endId = (e: string | PNode) => (typeof e === 'string' ? e : e.id);
 
 const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function CampusGraph(
-  { focusIds, selectedId, filter, onSelect, onFilterChange, onReset, rightInset = 0 },
+  { focusIds, focusSource, selectedId, filter, onSelect, onFilterChange, onReset, rightInset = 0 },
   ref,
 ) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -367,10 +370,10 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
       }
       cands.sort((a, b) => b.rank - a.rank);
       render.current.labels = placeLabels(ctx, cands, overlays, circles, {
-        x: 4,
-        y: 4,
-        w: box.width - 8,
-        h: box.height - 8,
+        x: 8,
+        y: 8,
+        w: box.width - 16,
+        h: box.height - 16,
       });
     },
     [data, nodeAlpha],
@@ -489,8 +492,8 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
       <div className="cg-bottom">
         {inFocus ? (
           <div className="cg-pill cg-hint">
-            <span className="cg-spark" aria-hidden="true">✦</span>
-            Gemini zoomed in to {activeFocus.length} of {counts.all} communities
+            {focusSource === 'ai' && <span className="cg-spark" aria-hidden="true">✦</span>}
+            {hintText(activeFocus.length, counts.all, focusSource)}
             <span className="cg-muted">· Tap any node for details</span>
           </div>
         ) : (

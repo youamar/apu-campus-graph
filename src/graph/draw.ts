@@ -399,6 +399,11 @@ export interface LabelPlacement {
   strong: boolean;
 }
 
+/** True when rect r lies fully inside bounds. */
+export function rectInBounds(r: Rect, bounds: Rect): boolean {
+  return r.x >= bounds.x && r.y >= bounds.y && r.x + r.w <= bounds.x + bounds.w && r.y + r.h <= bounds.y + bounds.h;
+}
+
 /**
  * Greedy label placement in screen space. Candidates come in priority order;
  * each tries its preferred side, the other side, then above and below, and is
@@ -428,8 +433,7 @@ export function placeLabels(
     }));
     spots.push({ x: c.sx - w / 2, y: c.sy - gap - h + 2, w, h });
     spots.push({ x: c.sx - w / 2, y: c.sy + gap - 2, w, h });
-    const inBounds = (r: Rect) =>
-      r.x >= bounds.x && r.y >= bounds.y && r.x + r.w <= bounds.x + bounds.w && r.y + r.h <= bounds.y + bounds.h;
+    const inBounds = (r: Rect) => rectInBounds(r, bounds);
     const free = (r: Rect) => {
       const q = pad(r);
       return inBounds(r) && !overlays.some((o) => hit(q, o)) && !placed.some((p) => hit(q, p));
@@ -438,7 +442,7 @@ export function placeLabels(
     let spot = spots.find((r) => free(r) && nodeHits(r) === 0);
     if (!spot && c.force) {
       const ok = spots.filter(free);
-      spot = (ok.length ? ok : spots).reduce((best, r) => (nodeHits(r) < nodeHits(best) ? r : best));
+      if (ok.length) spot = ok.reduce((best, r) => (nodeHits(r) < nodeHits(best) ? r : best));
     }
     if (!spot) continue;
     placed.push(spot);

@@ -104,10 +104,14 @@ export default function App() {
   const openProfile = useCallback(() => setProfileOpen(true), []);
 
   /** Focus the graph through the focusIds prop, the same path as ?focus=, so breadcrumb and hint show. */
-  const focusGraph = useCallback((ids: string[]) => setFocusIds([...ids]), []);
+  const [focusSource, setFocusSource] = useState<'ai' | 'user'>('user');
+  const focusGraph = useCallback((ids: string[], src: 'ai' | 'user' = 'user') => {
+    setFocusSource(src);
+    setFocusIds([...ids]);
+  }, []);
   const onGuideReply = useCallback(
     (r: GuideReply) => {
-      if (r.focusIds.length) focusGraph(r.focusIds);
+      if (r.focusIds.length) focusGraph(r.focusIds, r.source === 'gemini' ? 'ai' : 'user');
       if (r.openId) setSelectedId(r.openId);
     },
     [focusGraph],
@@ -189,6 +193,7 @@ export default function App() {
           <CampusGraph
             ref={graphRef}
             focusIds={focusIds}
+            focusSource={focusSource}
             selectedId={selectedId}
             filter={filter}
             onSelect={setSelectedId}
