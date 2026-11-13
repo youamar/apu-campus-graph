@@ -14,6 +14,11 @@ describe('localMatch', () => {
     expect(r.openId).toBe('apu-photography-club');
     expect(r.reply).toContain("I've opened its card.");
   });
+  it('does not open a card for interest-only queries', () => {
+    expect(localMatch('I love photography and want friends', catalog, null).openId).toBeNull();
+    expect(localMatch('I love photography and want friends', catalog, null).reply).not.toContain('opened');
+    expect(localMatch('sports and music', catalog, null).openId).toBeNull();
+  });
   it('handles no match', () => {
     const r = localMatch('zzzz', catalog, null);
     expect(r.focusIds).toEqual([]);

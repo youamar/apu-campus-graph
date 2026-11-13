@@ -115,18 +115,21 @@ export function localMatch(query: string, catalog: Community[], profile: Profile
     .slice(0, 4)
     .map((s) => s.c);
 
-  // openId: the community whose name (minus stopwords) is in the query; longest wins.
+  // openId: only when the query contains a community's full name or shortName as a
+  // word-bounded phrase ("apu" prefix optional). Longest wins; a tie means ambiguous.
+  const qJoined = ' ' + qWords.join(' ') + ' ';
+  const stripApu = (w: string[]) => (w[0] === 'apu' ? w.slice(1) : w);
   let open: Community | null = null;
   let openLen = 0;
-  const qJoined = qWords.join(' ');
+  let tied = false;
   for (const c of catalog) {
-    const phrase = nameCore(c.name).join(' ');
-    if (!phrase) continue;
-    if (new RegExp(`\\b${esc(phrase)}\\b`).test(qJoined) && phrase.length > openLen) {
-      open = c;
-      openLen = phrase.length;
-    }
+    const phrases = [c.name.replace(/\([^)]*\)/g, ''), c.shortName].map((n) => stripApu(words(n)).join(' ')).filter(Boolean);
+    const len = Math.max(0, ...phrases.filter((ph) => qJoined.includes(' ' + ph + ' ')).map((ph) => ph.length));
+    if (!len) continue;
+    if (len > openLen) { open = c; openLen = len; tied = false; }
+    else if (len === openLen && open && open.id !== c.id) tied = true;
   }
+  if (tied) open = null;
 
   const focusIds = top.map((c) => c.id);
   if (open && !focusIds.includes(open.id)) focusIds.unshift(open.id);
