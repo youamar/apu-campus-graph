@@ -13,6 +13,15 @@
   --text: #ffffff;
   --muted: #9e9e9e;
   --font: Roboto, "Helvetica Neue", sans-serif;
+  /* The graph is always a night sky; light mode frames it as a dark window. */
+  --graph-bg: #000000;
+  --elev-shadow: rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --handle: #4a4a4a;
+  --ink-ok: #5fd3ad;
+  --ink-warn: #ffb37a;
+  --ink-info: #7db4ff;
+  --ink-hot: #f5d75a;
 }
 
 :root[data-theme="light"] {
@@ -22,4 +31,12 @@
   --step-100: #e8e8e8;
   --text: #000000;
   --muted: #6b6b6b;
+  --graph-bg: radial-gradient(130% 95% at 28% 0%, #172443 0%, #0b1224 48%, #05070e 100%);
+  --elev-shadow: rgba(15, 23, 42, 0.16);
+  --scrim: rgba(15, 23, 42, 0.42);
+  --handle: #cfcfcf;
+  --ink-ok: #17805f;
+  --ink-warn: #b8560f;
+  --ink-info: #1d63d6;
+  --ink-hot: #8a6a00;
 }

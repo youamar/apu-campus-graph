@@ -1,4 +1,14 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import type { GuideReply } from '../../shared/guide';
 import type { CampusEvent, Community } from '../data/types';
 import type { Profile } from '../profile/profile';
@@ -33,6 +43,9 @@ export function happeningToday(events: CampusEvent[], now: Date, max = 3): Campu
     .sort((a, b) => a.start.localeCompare(b.start))
     .slice(0, max);
 }
+
+/** Drag distance (px) that snaps the bottom sheet to the other state. */
+const SNAP_PX = 48;
 
 const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
 
@@ -76,9 +89,20 @@ export interface ChatPanelProps {
   /** A numbered community in an AI bubble was clicked. */
   onOpen(id: string): void;
   onEditProfile(): void;
+  /** Phone layout: render as a draggable bottom sheet (collapsed peek or 75dvh). */
+  sheet?: boolean;
 }
 
-export default function ChatPanel({ catalog, events, profile, onReply, onEvent, onOpen, onEditProfile }: ChatPanelProps) {
+export default function ChatPanel({
+  catalog,
+  events,
+  profile,
+  onReply,
+  onEvent,
+  onOpen,
+  onEditProfile,
+  sheet = false,
+}: ChatPanelProps) {
   const { messages, send, pending } = useGuide({ profile, onReply });
   const [draft, setDraft] = useState('');
   const [promptEligible] = useState(() => !readFlag(PROMPT_KEY));
@@ -86,6 +110,12 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const byId = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog]);
   const today = useMemo(() => happeningToday(events, new Date()), [events]);
+  const [expanded, setExpanded] = useState(false);
+  /** Live sheet height while the handle is being dragged; null when at rest. */
+  const [dragH, setDragH] = useState<number | null>(null);
+  const asideRef = useRef<HTMLElement>(null);
+  const drag = useRef<{ id: number; y0: number; h0: number; moved: boolean } | null>(null);
+  const isOpen = sheet && expanded;
 
   const inConvo = messages.length > 0;
   const lastModel = [...messages].reverse().find((m) => m.role === 'model');
@@ -103,7 +133,7 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, pending, promptAfter]);
+  }, [messages.length, pending, promptAfter, isOpen]);
 
   // The field is disabled while pending; hand focus back once the reply lands.
   const wasPending = useRef(false);
@@ -129,6 +159,50 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
     e.preventDefault();
     submit(draft);
   };
+  // Sheet drag: follow the finger, then snap open or closed by direction; a tap toggles.
+  // The pointer is captured at once because the sheet can shift under it (the field blurs, the tab bar returns).
+  const onGrabDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!sheet || !asideRef.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    drag.current = { id: e.pointerId, y0: e.clientY, h0: asideRef.current.getBoundingClientRect().height, moved: false };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onGrabMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dy = e.clientY - d.y0;
+    if (!d.moved && Math.abs(dy) < 6) return;
+    d.moved = true;
+    setDragH(Math.max(96, Math.min(window.innerHeight * 0.88, d.h0 - dy)));
+  };
+  const onGrabUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.id !== e.pointerId) return;
+    setDragH(null);
+    if (e.type === 'pointercancel') return;
+    if (!d.moved) {
+      setExpanded((x) => !x);
+      return;
+    }
+    const dy = e.clientY - d.y0;
+    if (dy < -SNAP_PX) setExpanded(true);
+    else if (dy > SNAP_PX) setExpanded(false);
+  };
+  /** Keyboard activation of the handle (pointer taps are handled on pointerup). */
+  const onHandleClick = (e: ReactMouseEvent) => {
+    if (e.detail === 0) setExpanded((x) => !x);
+  };
+
+  // On a phone a card or event covers the map; drop the sheet so the map is there when it closes.
+  const open = (id: string) => {
+    if (sheet) setExpanded(false);
+    onOpen(id);
+  };
+  const openEvent = (ev: CampusEvent) => {
+    if (sheet) setExpanded(false);
+    onEvent(ev);
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
@@ -148,7 +222,7 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
             <ol className="chat-matches">
               {list.map((c, i) => (
                 <li key={c.id}>
-                  <button type="button" className="chat-match" onClick={() => onOpen(c.id)}>
+                  <button type="button" className="chat-match" onClick={() => open(c.id)}>
                     <span className="chat-num" aria-hidden="true">{i + 1}</span>
                     <span className="chat-match-body">
                       <strong>{c.shortName}</strong>
@@ -160,7 +234,7 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
             </ol>
           )}
           {opened && (
-            <button type="button" className="chat-opened" onClick={() => onOpen(opened.id)}>
+            <button type="button" className="chat-opened" onClick={() => open(opened.id)}>
               <Sparkle size={12} /> {opened.shortName} card opened
             </button>
           )}
@@ -172,15 +246,59 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
     );
   };
 
-  return (
-    <aside className="side-panel chat" aria-label="Ask APU, campus guide">
-      <header className="chat-head">
-        <div className="chat-mark"><Sparkle size={22} /></div>
-        <div>
-          <h2>Ask APU</h2>
+  const head = (
+    <header className="chat-head">
+      <div className="chat-mark"><Sparkle size={22} /></div>
+      <div className="chat-head-text">
+        <h2>Ask APU</h2>
+        {sheet && !expanded && inConvo ? (
+          <p className="chat-peek">{pending ? 'Thinking…' : lastModel?.text}</p>
+        ) : (
           <p>Your campus guide <span aria-hidden="true">·</span> powered by Gemini</p>
+        )}
+      </div>
+    </header>
+  );
+
+  const quick = sheet && !expanded ? (!pending && lastModel?.reply ? lastModel.reply.suggestions : TRY_ASKING).slice(0, 3) : [];
+
+  const cls = ['side-panel', 'chat'];
+  if (sheet) cls.push('sheet', expanded ? 'expanded' : 'collapsed');
+  if (dragH !== null) cls.push('dragging');
+
+  return (
+    <>
+    {isOpen && <div className="sheet-scrim" aria-hidden="true" onClick={() => setExpanded(false)} />}
+    <aside
+      ref={asideRef}
+      className={cls.join(' ')}
+      aria-label="Ask APU, campus guide"
+      style={dragH !== null ? { height: dragH } : undefined}
+    >
+      {sheet ? (
+        <div
+          className="sheet-grab"
+          onPointerDown={onGrabDown}
+          onPointerMove={onGrabMove}
+          onPointerUp={onGrabUp}
+          onPointerCancel={onGrabUp}
+        >
+          <button type="button" className="sheet-handle" onClick={onHandleClick} aria-expanded={expanded} aria-label={expanded ? 'Collapse chat' : 'Expand chat'}>
+            <span aria-hidden="true" />
+          </button>
+          {head}
         </div>
-      </header>
+      ) : (
+        head
+      )}
+
+      {quick.length > 0 && (
+        <div className="chat-quick" role="group" aria-label="Quick questions">
+          {quick.map((q) => (
+            <button key={q} type="button" className="chat-chip" onClick={() => submit(q)}>{q}</button>
+          ))}
+        </div>
+      )}
 
       <div className="chat-scroll" ref={scrollRef}>
         <div className={inConvo ? 'chat-log convo' : 'chat-log'} role="log" aria-live="polite" aria-label="Conversation">
@@ -199,7 +317,7 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
                             type="button"
                             className="chat-event"
                             style={{ '--cat': `var(--${cat})` } as React.CSSProperties}
-                            onClick={() => onEvent(ev)}
+                            onClick={() => openEvent(ev)}
                           >
                             <span className="chat-event-bar" aria-hidden="true" />
                             <span className="chat-event-body">
@@ -264,7 +382,7 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
           disabled={pending}
           maxLength={1000}
           aria-label="Ask APU a question"
-          placeholder={inConvo ? 'Ask a follow-up…' : 'Ask anything about clubs, events, how to join…'}
+          placeholder={inConvo ? 'Ask a follow-up…' : sheet ? 'Ask about clubs, events, joining…' : 'Ask anything about clubs, events, how to join…'}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
         />
@@ -276,5 +394,6 @@ export default function ChatPanel({ catalog, events, profile, onReply, onEvent, 
         Answers use APU Student Affairs data <span aria-hidden="true">·</span> {catalog.length} communities
       </p>
     </aside>
+    </>
   );
 }

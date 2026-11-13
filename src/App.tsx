@@ -8,9 +8,12 @@ import CampusGraph, { type CampusGraphHandle } from './graph/CampusGraph';
 import type { GraphFilter } from './graph/layout';
 import { emptyProfile, loadProfile, saveProfile, toggleId, type Profile } from './profile/profile';
 import ProfileSheet from './profile/ProfileSheet';
+import { MOBILE_QUERY, useMediaQuery } from './useMediaQuery';
 
 const THEME_KEY = 'apu-campus-graph/theme';
 const TABS = ['Dashboard', 'Timetable', 'Attendance', 'Campus Life', 'More'];
+/** Status-bar colour per theme (matches --surface) so the phone chrome blends with the top bar. */
+const THEME_COLOR: Record<'dark' | 'light', string> = { dark: '#191919', light: '#ffffff' };
 
 
 const svgProps = {
@@ -36,6 +39,31 @@ const SunIcon = () => (
 const MoonIcon = () => (
   <svg {...svgProps}><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
 );
+
+const tabIcon = { ...svgProps, width: 24, height: 24, strokeWidth: 1.8 };
+/** APSpace's phone tab bar, in its order; Campus Life is this app. */
+const MOBILE_TABS = [
+  {
+    label: 'Dashboard',
+    icon: <svg {...tabIcon}><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>,
+  },
+  {
+    label: 'Timetable',
+    icon: <svg {...tabIcon}><rect x="3.5" y="5" width="17" height="15.5" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>,
+  },
+  {
+    label: 'Campus Life',
+    icon: <svg {...tabIcon}><circle cx="12" cy="12" r="2.6" /><circle cx="5" cy="6" r="1.9" /><circle cx="19" cy="7" r="1.9" /><circle cx="17.5" cy="18.5" r="1.9" /><circle cx="5.5" cy="17.5" r="1.9" /><path d="m6.6 7.3 3.3 3M17.3 8l-3.1 2.6M16.2 17.2l-2.4-3.3M7.2 16.5l2.8-2.6" /></svg>,
+  },
+  {
+    label: 'Attendance',
+    icon: <svg {...tabIcon}><rect x="5" y="4.5" width="14" height="16" rx="2" /><path d="M9 3h6v3H9zM9 13l2 2 4-4.5" /></svg>,
+  },
+  {
+    label: 'More',
+    icon: <svg {...tabIcon}><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></svg>,
+  },
+];
 
 type Theme = 'dark' | 'light';
 
@@ -64,6 +92,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(loadProfile);
   const [profileOpen, setProfileOpen] = useState(() => devParam('profile') === '1');
   const graphRef = useRef<CampusGraphHandle>(null);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   const selected = useMemo(() => catalog.find((c) => c.id === selectedId) ?? null, [selectedId]);
 
@@ -114,6 +143,7 @@ export default function App() {
     } catch {
       /* storage unavailable */
     }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
   }, [theme]);
 
   return (
@@ -126,15 +156,15 @@ export default function App() {
           <span className="section">Campus Life</span>
         </div>
         <div className="toolbar-right">
-          <nav className="tabs" aria-label="Primary">
+          <nav className="tabs desktop-only" aria-label="Primary">
             {TABS.map((t) => (
               <button key={t} type="button" className={t === 'Campus Life' ? 'tab active' : 'tab'}>
                 {t}
               </button>
             ))}
           </nav>
-          <button type="button" className="icon-btn" aria-label="Search"><SearchIcon /></button>
-          <button type="button" className="icon-btn" aria-label="Notifications"><BellIcon /></button>
+          <button type="button" className="icon-btn desktop-only" aria-label="Search"><SearchIcon /></button>
+          <button type="button" className="icon-btn desktop-only" aria-label="Notifications"><BellIcon /></button>
           <button
             type="button"
             className="icon-btn"
@@ -164,10 +194,11 @@ export default function App() {
             onSelect={setSelectedId}
             onFilterChange={setFilter}
             onReset={() => setFocusIds([])}
-            rightInset={selected ? CARD_INSET : 0}
+            rightInset={selected && !isMobile ? CARD_INSET : 0}
           />
           {selected && (
             <div className="card-dock">
+              <div className="card-scrim" aria-hidden="true" onClick={closeCard} />
               <DetailCard
                 key={selected.id}
                 community={selected}
@@ -188,8 +219,22 @@ export default function App() {
           onEvent={onEvent}
           onOpen={setSelectedId}
           onEditProfile={openProfile}
+          sheet={isMobile}
         />
       </main>
+      <nav className="tabbar" aria-label="APSpace">
+        {MOBILE_TABS.map((t) => (
+          <button
+            key={t.label}
+            type="button"
+            className={t.label === 'Campus Life' ? 'tabbar-btn active' : 'tabbar-btn'}
+            aria-current={t.label === 'Campus Life' ? 'page' : undefined}
+          >
+            {t.icon}
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
       {profileOpen && (
         <ProfileSheet
           profile={profile}

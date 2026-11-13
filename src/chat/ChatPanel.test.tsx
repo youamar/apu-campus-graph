@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { GuideReply } from '../../shared/guide';
 import { catalog } from '../data/catalog';
 import type { CampusEvent } from '../data/types';
-import ChatPanel, { happeningToday } from './ChatPanel';
+import ChatPanel, { happeningToday, TRY_ASKING } from './ChatPanel';
 
 const at = (h: number, m = 0) => {
   const d = new Date();
@@ -72,5 +72,45 @@ describe('ChatPanel', () => {
     fireEvent.keyDown(box, { key: 'Enter' });
     expect(fetch).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.getByText('Two clubs fit.')).toBeInTheDocument());
+  });
+
+  describe('as a phone bottom sheet', () => {
+    const sheetSetup = () => {
+      const props = { onReply: vi.fn(), onEvent: vi.fn(), onOpen: vi.fn(), onEditProfile: vi.fn() };
+      const { container } = render(
+        <ChatPanel catalog={catalog} events={[]} profile={null} {...props} sheet />,
+      );
+      return { props, aside: container.querySelector('aside')! };
+    };
+
+    it('starts collapsed with three quick prompts and the input; the handle expands and collapses it', () => {
+      const { aside } = sheetSetup();
+      expect(aside).toHaveClass('sheet', 'collapsed');
+      const quick = screen.getByRole('group', { name: 'Quick questions' });
+      expect(quick.querySelectorAll('button')).toHaveLength(3);
+      expect(screen.getByRole('textbox', { name: /ask apu/i })).toBeInTheDocument();
+
+      const handle = screen.getByRole('button', { name: 'Expand chat' });
+      expect(handle).toHaveAttribute('aria-expanded', 'false');
+      fireEvent.click(handle, { detail: 0 }); // keyboard activation
+      expect(aside).toHaveClass('expanded');
+      expect(screen.queryByRole('group', { name: 'Quick questions' })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Collapse chat' }), { detail: 0 });
+      expect(aside).toHaveClass('collapsed');
+    });
+
+    it('a quick prompt sends, the peek previews the reply, and opening a match drops the sheet', async () => {
+      const { props, aside } = sheetSetup();
+      fireEvent.click(within(screen.getByRole('group', { name: 'Quick questions' })).getByRole('button', { name: TRY_ASKING[0] }));
+      await waitFor(() => expect(props.onReply).toHaveBeenCalledWith(reply));
+      expect(aside.querySelector('.chat-peek')).toHaveTextContent('Two clubs fit.');
+      expect(screen.getByRole('group', { name: 'Quick questions' })).toHaveTextContent('Compare both');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Expand chat' }), { detail: 0 });
+      const photo = catalog.find((c) => c.id === 'apu-photography-club')!;
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(photo.shortName) }));
+      expect(props.onOpen).toHaveBeenCalledWith('apu-photography-club');
+      expect(aside).toHaveClass('collapsed');
+    });
   });
 });
