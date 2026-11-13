@@ -1,6 +1,6 @@
 import { catalog, events } from '../data/catalog';
 import { nodeRadius } from './draw';
-import { HUB_POS, labelSide, layoutNodes, matchesFilter } from './layout';
+import { FOCUS_ZOOM_FACTOR, HUB_POS, capFocusZoom, labelSide, layoutNodes, matchCountLabel, matchesFilter } from './layout';
 import { nextEventToday, startsIn } from './LiveTicker';
 import { toGraph } from './model';
 
@@ -68,5 +68,18 @@ describe('live ticker helpers', () => {
   it('formats the countdown', () => {
     expect(startsIn(40 * 60000)).toBe('40 min');
     expect(startsIn(125 * 60000)).toBe('2 h 5 min');
+  });
+});
+
+describe('focus helpers', () => {
+  it('pluralises the match count', () => {
+    expect(matchCountLabel(1)).toBe('1 match');
+    expect(matchCountLabel(4)).toBe('4 matches');
+  });
+
+  it('caps focus zoom relative to the overview zoom', () => {
+    expect(capFocusZoom(40, 0.7)).toBeCloseTo(0.7 * FOCUS_ZOOM_FACTOR);
+    expect(capFocusZoom(1.1, 0.7)).toBe(1.1);
+    expect(FOCUS_ZOOM_FACTOR).toBeLessThanOrEqual(2.6);
   });
 });

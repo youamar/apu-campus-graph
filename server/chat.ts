@@ -52,7 +52,9 @@ Rules:
   Any sentence that uses a sample value starts with "For example" or contains "might". Write natural sentences; do not copy catalog syntax such as "link:" or "(sample)".
 - Real links (after "link:" or "via" in join) are the club's official channels: share them as the real way to reach the club. Only the step text before "(sample)" is an example.
 - Keep replies under 90 words, friendly, and in the user's language.
-- Return 1-6 focusIds, ordered best first.
+- focusIds, ordered best first (never more than 6):
+  - For an open-ended interest or discovery question ("I love photography", "something chill", "what fits Friday?"), return 3-5 related communities. Adjacent interests count: photography -> photography, cinematography, film/video, travel.
+  - For a question about one named community ("How do I join the Photography Club?"), return that one first, plus up to 2 related communities.
 - Set openId only when the user asks about one specific community.
 - focusIds and openId must be ids copied exactly from the CATALOG. If nothing in the CATALOG fits (or the question is not about APU communities), say so briefly, return an empty focusIds and suggest what you can help with.
 - suggestions: exactly 3 short follow-up questions the user could ask next.

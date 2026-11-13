@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { GuideReply } from '../../shared/guide';
+import * as guide from '../../shared/guide';
 import { toWire, useGuide } from './useGuide';
 
 const geminiReply: GuideReply = {
@@ -12,6 +13,7 @@ const geminiReply: GuideReply = {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('useGuide', () => {
@@ -78,6 +80,41 @@ describe('useGuide', () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(result.current.messages).toHaveLength(0);
+  });
+});
+
+describe('useGuide resilience', () => {
+  it('recovers when the offline matcher itself throws: safe reply, and the next send still works', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
+    vi.spyOn(guide, 'localMatch').mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const { result } = renderHook(() => useGuide({ profile: null }));
+    await act(async () => {
+      await result.current.send('photography');
+    });
+    expect(result.current.pending).toBe(false);
+    expect(result.current.last).toMatchObject({ source: 'offline', focusIds: [], openId: null });
+    expect(result.current.last?.reply).toMatch(/\S/);
+    expect(result.current.last?.suggestions).toHaveLength(3);
+
+    await act(async () => {
+      await result.current.send('football');
+    });
+    expect(result.current.messages.map((m) => m.role)).toEqual(['user', 'model', 'user', 'model']);
+    expect(result.current.last?.focusIds.length).toBeGreaterThan(0);
+  });
+
+  it('drops focusIds and openId that are not in the catalog before onReply', async () => {
+    const reply = { ...geminiReply, focusIds: ['ghost-club', 'apu-photography-club'], openId: 'ghost-club' };
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify(reply), { status: 200 }))));
+    const onReply = vi.fn();
+    const { result } = renderHook(() => useGuide({ profile: null, onReply }));
+    await act(async () => {
+      await result.current.send('photo');
+    });
+    expect(onReply).toHaveBeenCalledWith(expect.objectContaining({ focusIds: ['apu-photography-club'], openId: null }));
+    expect(result.current.last).toMatchObject({ focusIds: ['apu-photography-club'], openId: null });
   });
 });
 

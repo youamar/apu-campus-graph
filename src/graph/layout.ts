@@ -158,3 +158,17 @@ export function layoutNodes<T extends GNode>(
     return { ...n, x: b.x, y: b.y, fx: b.x, fy: b.y };
   });
 }
+
+/** "1 match" / "4 matches" for the focus breadcrumb. */
+export function matchCountLabel(n: number): string {
+  return `${n} ${n === 1 ? 'match' : 'matches'}`;
+}
+
+/** Focus zoom never exceeds this multiple of the overview zoom, so one match still shows its neighbourhood.
+ *  (2.6x measured as no cap at all: the overview zoom is ~1.3, so 2.6x sat above FOCUS_MAX_ZOOM.) */
+export const FOCUS_ZOOM_FACTOR = 1.8;
+
+/** Caps a focus zoom `k` relative to the overview (fit-all) zoom. */
+export function capFocusZoom(k: number, overviewK: number): number {
+  return Math.min(k, overviewK * FOCUS_ZOOM_FACTOR);
+}

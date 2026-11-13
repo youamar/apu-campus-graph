@@ -21,6 +21,13 @@ const ask = (text: string, profile: Profile | null = null) => ({ messages: [{ ro
 describe('buildSystemPrompt', () => {
   const prompt = buildSystemPrompt(catalog, events);
 
+  it('asks for 3-5 related communities on open-ended questions and the named one plus up to 2 related', () => {
+    expect(prompt).toMatch(/open-ended interest or discovery question[^\n]*3-5 related communities/i);
+    expect(prompt).toMatch(/adjacent interests count/i);
+    expect(prompt).toMatch(/one named community[^\n]*plus up to 2 related/i);
+    expect(prompt).not.toMatch(/Return 1-6 focusIds/);
+  });
+
   it('lists catalog ids', () => {
     expect(prompt).toContain('apu-photography-club');
   });

@@ -18,7 +18,7 @@ import {
   type Rect,
 } from './draw';
 import Filters, { type FilterCounts } from './Filters';
-import { CATEGORY_COLOR, CATEGORY_NAME, labelSide, layoutNodes, matchesFilter, type GraphFilter } from './layout';
+import { CATEGORY_COLOR, CATEGORY_NAME, capFocusZoom, labelSide, layoutNodes, matchCountLabel, matchesFilter, type GraphFilter } from './layout';
 import Legend from './Legend';
 import LiveTicker from './LiveTicker';
 import { toGraph } from './model';
@@ -99,31 +99,35 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
     return () => ro.disconnect();
   }, []);
 
+  /** Zoom and centre that fit the whole graph into the area left free by the overlays. */
+  const overview = useCallback(() => {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const n of data.nodes) {
+      const r = nodeRadius(n) + (n.kind === 'hub' ? 6 : 2);
+      x0 = Math.min(x0, (n.x ?? 0) - r);
+      x1 = Math.max(x1, (n.x ?? 0) + r);
+      y0 = Math.min(y0, (n.y ?? 0) - r);
+      y1 = Math.max(y1, (n.y ?? 0) + r + (n.kind === 'hub' ? 40 : 0));
+    }
+    const aw = size.w - SAFE.left - SAFE.right;
+    const ah = size.h - SAFE.top - SAFE.bottom;
+    const k = Math.min(aw / (x1 - x0), ah / (y1 - y0));
+    // Graph point that must land at the canvas center so the bbox centers in the safe area.
+    const sx = SAFE.left + aw / 2 - size.w / 2;
+    const sy = SAFE.top + ah / 2 - size.h / 2;
+    return { k, cx: (x0 + x1) / 2 - sx / k, cy: (y0 + y1) / 2 - sy / k };
+  }, [data, size]);
+
   /** Fit the whole graph into the area left free by the overlays. */
   const fitAll = useCallback(
     (ms = 600) => {
       const fg = fgRef.current;
       if (!fg || !size.w) return;
-      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      for (const n of data.nodes) {
-        const r = nodeRadius(n) + (n.kind === 'hub' ? 6 : 2);
-        x0 = Math.min(x0, (n.x ?? 0) - r);
-        x1 = Math.max(x1, (n.x ?? 0) + r);
-        y0 = Math.min(y0, (n.y ?? 0) - r);
-        y1 = Math.max(y1, (n.y ?? 0) + r + (n.kind === 'hub' ? 40 : 0));
-      }
-      const aw = size.w - SAFE.left - SAFE.right;
-      const ah = size.h - SAFE.top - SAFE.bottom;
-      const k = Math.min(aw / (x1 - x0), ah / (y1 - y0));
-      // Graph point that must land at the canvas center so the bbox centers in the safe area.
-      const sx = SAFE.left + aw / 2 - size.w / 2;
-      const sy = SAFE.top + ah / 2 - size.h / 2;
-      const cx = (x0 + x1) / 2 - sx / k;
-      const cy = (y0 + y1) / 2 - sy / k;
+      const { k, cx, cy } = overview();
       fg.zoom(k, ms);
       fg.centerAt(cx, cy, ms);
     },
-    [data, size],
+    [overview, size],
   );
 
   /** Frame the focused nodes inside the area left of `rightInset`. */
@@ -146,13 +150,14 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
       const right = rightInset > 0 ? rightInset + 110 : FOCUS_PAD.right;
       const aw = Math.max(80, size.w - left - right);
       const ah = Math.max(80, size.h - FOCUS_PAD.top - FOCUS_PAD.bottom);
-      const k = Math.min(aw / Math.max(x1 - x0, 1), ah / Math.max(y1 - y0, 1), FOCUS_MAX_ZOOM);
+      // A single match (or a tight cluster) would otherwise zoom right in; keep its neighbourhood in view.
+      const k = capFocusZoom(Math.min(aw / Math.max(x1 - x0, 1), ah / Math.max(y1 - y0, 1), FOCUS_MAX_ZOOM), overview().k);
       const sx = left + aw / 2 - size.w / 2;
       const sy = FOCUS_PAD.top + ah / 2 - size.h / 2;
       fg.zoom(k, ms);
       fg.centerAt((x0 + x1) / 2 - sx / k, (y0 + y1) / 2 - sy / k, ms);
     },
-    [data, size, rightInset],
+    [data, size, rightInset, overview],
   );
 
   // Initial framing once the canvas has a size; refit on resize unless focused.
@@ -462,7 +467,7 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
               <span aria-hidden="true">←</span> All communities
             </button>
             <span className="cg-crumb-text">
-              {focusLabel} <span className="cg-muted">›</span> {activeFocus.length} matches
+              {focusLabel} <span className="cg-muted">›</span> {matchCountLabel(activeFocus.length)}
             </span>
           </div>
         ) : (
