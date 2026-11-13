@@ -98,4 +98,66 @@ describe('toGraph', () => {
     const { nodes } = toGraph(catalog, [], now);
     expect(nodes.filter((n) => n.kind === 'community' && n.live).length).toBe(0);
   });
+
+  describe('upcoming', () => {
+    const at = (communityId: string, start: Date, id = 'x'): CampusEvent => ({
+      id: `ev-${communityId}-${id}`,
+      communityId,
+      title: 'Test event',
+      place: 'Somewhere',
+      start: start.toISOString(),
+      going: 1,
+      sample: true,
+    });
+    const inHours = (h: number) => new Date(now.getTime() + h * 3600_000);
+
+    it('is 0 for every node when there are no events, including hubs and centre', () => {
+      const { nodes } = toGraph(catalog, [], now);
+      for (const n of nodes) expect(n.upcoming).toBe(0);
+    });
+
+    it('is between 0 and 1 for an event in 3 days', () => {
+      const u = byId(toGraph(catalog, [at(PHOTO, inHours(72))], now).nodes, PHOTO).upcoming;
+      expect(u).toBeGreaterThan(0);
+      expect(u).toBeLessThan(1);
+    });
+
+    it('is 1 for an event in 2 hours', () => {
+      expect(byId(toGraph(catalog, [at(PHOTO, inHours(2))], now).nodes, PHOTO).upcoming).toBe(1);
+    });
+
+    it('is 1 for a club with an event today (and it stays live)', () => {
+      const n = byId(toGraph(catalog, [eventFor(PHOTO, 0)], now).nodes, PHOTO);
+      expect(n.live).toBe(true);
+      expect(n.upcoming).toBe(1);
+    });
+
+    it('is 0 for an event 8 days out', () => {
+      expect(byId(toGraph(catalog, [at(PHOTO, inHours(8 * 24))], now).nodes, PHOTO).upcoming).toBe(0);
+    });
+
+    it('is 0 for a past event', () => {
+      expect(byId(toGraph(catalog, [at(PHOTO, inHours(-30))], now).nodes, PHOTO).upcoming).toBe(0);
+    });
+
+    it('falls off with days until the event', () => {
+      const u = (h: number) => byId(toGraph(catalog, [at(PHOTO, inHours(h))], now).nodes, PHOTO).upcoming;
+      expect(u(48)).toBeGreaterThan(u(96));
+      expect(u(96)).toBeGreaterThan(u(144));
+    });
+
+    it('uses the nearest event when a club has several', () => {
+      const near = byId(toGraph(catalog, [at(PHOTO, inHours(48))], now).nodes, PHOTO).upcoming;
+      const both = byId(
+        toGraph(catalog, [at(PHOTO, inHours(140), 'far'), at(PHOTO, inHours(48), 'near'), at(PHOTO, inHours(-30), 'past')], now).nodes,
+        PHOTO,
+      ).upcoming;
+      expect(both).toBe(near);
+    });
+
+    it('keeps hubs and centre at 0 even with events', () => {
+      const { nodes } = toGraph(catalog, [at(PHOTO, inHours(2))], now);
+      for (const n of nodes.filter((x) => x.kind !== 'community')) expect(n.upcoming).toBe(0);
+    });
+  });
 });

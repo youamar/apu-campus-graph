@@ -53,9 +53,24 @@ describe('catalog', () => {
 });
 
 describe('events', () => {
-  it('has 6-8 events referencing real communities', () => {
-    expect(events.length).toBeGreaterThanOrEqual(6);
-    expect(events.length).toBeLessThanOrEqual(8);
+  it('every enrichment event communityId exists in the catalog', () => {
+    const ids = new Set(catalog.map((c) => c.id));
+    const missing = enrichment.events.filter((e) => !ids.has(e.communityId)).map((e) => e.communityId);
+    expect(missing).toEqual([]);
+  });
+  it('spreads upcoming sample events over day offsets 1-6 across all three categories', () => {
+    const later = enrichment.events.filter((e) => e.dayOffset >= 1 && e.dayOffset <= 6);
+    expect(later.length).toBeGreaterThanOrEqual(8);
+    expect(later.length).toBeLessThanOrEqual(12);
+    const cats = new Set(later.map((e) => catalog.find((c) => c.id === e.communityId)?.category));
+    expect(cats).toEqual(new Set(['soc', 'spo', 'intl']));
+    const clubs = new Set(enrichment.events.map((e) => e.communityId));
+    expect(clubs.size).toBeGreaterThanOrEqual(12);
+    expect(clubs.size).toBeLessThanOrEqual(16);
+  });
+  it('has events referencing real communities', () => {
+    expect(events.length).toBeGreaterThanOrEqual(12);
+    expect(events.length).toBeLessThanOrEqual(18);
     const ids = new Set(catalog.map((c) => c.id));
     for (const e of events) expect(ids.has(e.communityId)).toBe(true);
   });

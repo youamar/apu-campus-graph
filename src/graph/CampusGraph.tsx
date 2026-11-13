@@ -344,7 +344,9 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
         const featured = n.community?.sample === true && !fi.size;
         const rank =
           idx > 0 ? 100 - idx : n.id === sel ? 90 : n.id === hov ? 85 :
-          alpha > 0.5 && n.live ? 70 : alpha > 0.5 && featured ? 50 : alpha > 0.5 && scale > LABEL_ZOOM ? 10 + n.size : -1;
+          alpha > 0.5 && n.live ? 70 : alpha > 0.5 && featured ? 50 :
+          // The brightest upcoming stars get a name when there is room; never forced.
+          alpha > 0.5 && !fi.size && n.upcoming >= 0.7 ? 40 : alpha > 0.5 && scale > LABEL_ZOOM ? 10 + n.size : -1;
         if (rank < 0) continue;
         cands.push({
           id: n.id,

@@ -7,6 +7,12 @@ export interface GNode {
   label: string;
   size: number;
   live: boolean;
+  /**
+   * How soon the community's next event is, 0..1: 1 within 24h (and for
+   * anything today), falling linearly to 0 at 7 days; 0 with no event in
+   * [now, now + 7 days). Hubs and the centre are always 0.
+   */
+  upcoming: number;
   community?: Community;
 }
 
@@ -37,6 +43,17 @@ function sameLocalDay(a: Date, b: Date): boolean {
   );
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const UPCOMING_DAYS = 7;
+
+/** 1 within a day, linear down to 0 at UPCOMING_DAYS; 0 for past or later events. */
+export function upcomingScore(startMs: number, nowMs: number): number {
+  const days = (startMs - nowMs) / DAY_MS;
+  if (days < 0 || days >= UPCOMING_DAYS) return 0;
+  if (days <= 1) return 1;
+  return 1 - (days - 1) / (UPCOMING_DAYS - 1);
+}
+
 export function toGraph(
   c: Community[],
   e: CampusEvent[],
@@ -46,11 +63,19 @@ export function toGraph(
     e.filter((ev) => sameLocalDay(new Date(ev.start), now)).map((ev) => ev.communityId),
   );
 
-  const nodes: GNode[] = [{ id: 'apu', kind: 'center', label: 'APU', size: 12, live: false }];
+  // Nearest upcoming event wins, so keep the highest score per community.
+  const upcoming = new Map<string, number>();
+  const nowMs = now.getTime();
+  for (const ev of e) {
+    const u = liveIds.has(ev.communityId) ? 1 : upcomingScore(new Date(ev.start).getTime(), nowMs);
+    if (u > (upcoming.get(ev.communityId) ?? 0)) upcoming.set(ev.communityId, u);
+  }
+
+  const nodes: GNode[] = [{ id: 'apu', kind: 'center', label: 'APU', size: 12, live: false, upcoming: 0 }];
   const links: GLink[] = [];
 
   for (const h of HUBS) {
-    nodes.push({ id: h.id, kind: 'hub', category: h.key, label: h.label, size: 8, live: false });
+    nodes.push({ id: h.id, kind: 'hub', category: h.key, label: h.label, size: 8, live: false, upcoming: 0 });
     links.push({ source: h.id, target: 'apu', kind: 'hub' });
   }
 
@@ -63,6 +88,7 @@ export function toGraph(
       label: com.shortName,
       size: 3 + com.activity * 1.2,
       live: liveIds.has(com.id),
+      upcoming: upcoming.get(com.id) ?? 0,
       community: com,
     });
     links.push({ source: com.id, target: hubOf.get(com.category)!, kind: 'member' });

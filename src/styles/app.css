@@ -45,6 +45,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
 .cg canvas.clickable { cursor: pointer; }
 .cg-muted { color: var(--pill-muted); }
 .cg-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.cg-star { width: 10px; display: inline-flex; justify-content: center; flex: none; color: #fff; font-size: 12px; line-height: 1; text-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 12px rgba(160, 200, 255, 0.6); }
 
 .cg-top {
   position: absolute; top: 0; left: 0; right: 0; padding: 28px 28px 0; pointer-events: none;

@@ -144,6 +144,13 @@
     { "id": "ev-dance-open", "communityId": "apu-dance-club", "title": "Open dance class", "place": "Studio 2", "dayOffset": 0, "time": "18:30", "going": 27 },
     { "id": "ev-esports-scrim", "communityId": "esports-club", "title": "Valorant scrim night", "place": "Esports Lounge", "dayOffset": 0, "time": "21:00", "going": 15 },
     { "id": "ev-aws-talk", "communityId": "aws-cloud-club", "title": "Intro to serverless", "place": "Auditorium 2", "dayOffset": 1, "time": "16:00", "going": 29 },
-    { "id": "ev-music-jam", "communityId": "apu-music-club-amc", "title": "Open mic jam", "place": "Level 3 Atrium", "dayOffset": 1, "time": "18:00", "going": 20 }
+    { "id": "ev-music-jam", "communityId": "apu-music-club-amc", "title": "Open mic jam", "place": "Level 3 Atrium", "dayOffset": 1, "time": "18:00", "going": 20 },
+    { "id": "ev-futsal-friendly", "communityId": "mens-futsal-club", "title": "Inter-faculty futsal friendly", "place": "Futsal Court A", "dayOffset": 2, "time": "19:30", "going": 22 },
+    { "id": "ev-csa-hotpot", "communityId": "apu-china-students-association-apu-csa", "title": "Hotpot welcome night", "place": "Level 4 Café", "dayOffset": 2, "time": "19:00", "going": 38 },
+    { "id": "ev-tedx-salon", "communityId": "tedxasia-pacific-u", "title": "TEDx speaker salon", "place": "Auditorium 1", "dayOffset": 3, "time": "15:00", "going": 44 },
+    { "id": "ev-boulder-intro", "communityId": "apu-bouldering-club-abc", "title": "Beginner bouldering session", "place": "Meet at Block E lobby", "dayOffset": 4, "time": "18:00", "going": 12 },
+    { "id": "ev-gamejam-kickoff", "communityId": "apu-game-development-club-apugdc", "title": "Weekend game jam kickoff", "place": "Lab 6-02", "dayOffset": 5, "time": "17:00", "going": 35 },
+    { "id": "ev-africa-showcase", "communityId": "african-community", "title": "African cultural showcase", "place": "Level 3 Atrium", "dayOffset": 5, "time": "18:30", "going": 57 },
+    { "id": "ev-pacemakers-run", "communityId": "pacemakers-running-club-pmrc", "title": "Sunrise 5K group run", "place": "Meet at Main Gate", "dayOffset": 6, "time": "06:30", "going": 16 }
   ]
 }

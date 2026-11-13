@@ -134,6 +134,68 @@ function drawPill(
   ctx.restore();
 }
 
+/** Visual strength for an upcoming score: a floor so even a day-6 event reads as brighter. */
+export function starStrength(upcoming: number): number {
+  return upcoming > 0 ? 0.35 + 0.65 * Math.min(upcoming, 1) : 0;
+}
+
+interface StarLook {
+  /** Highlight stop, body colour and glow colour for the node's gradient. */
+  hi: string;
+  body: string;
+  glow: string;
+  /** Twinkle phase so stars don't pulse in lockstep. */
+  phase: number;
+}
+
+/** Per-node colours precomputed once, so the frame loop only builds the gradient. */
+const starLooks = new Map<string, StarLook>();
+function starLook(id: string, color: string, s: number): StarLook {
+  const key = `${id}|${color}|${s}`;
+  let look = starLooks.get(key);
+  if (!look) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    look = {
+      hi: tint(color, 0.45 + 0.45 * s),
+      body: tint(color, 0.35 * s),
+      glow: tint(color, 0.3 * s),
+      phase: (h % 628) / 100,
+    };
+    starLooks.set(key, look);
+  }
+  return look;
+}
+
+/** Four thin diffraction spikes and a white core: the "star" on a club with an event coming up. */
+function drawSparkle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, s: number, twinkle: number, scale: number) {
+  const long = r * (1.5 + 1.3 * s) * (0.9 + 0.1 * twinkle) + 3 / scale;
+  const short = long * 0.62;
+  const w = Math.max(r * 0.16, 0.9 / scale);
+  ctx.save();
+  ctx.globalAlpha *= (0.5 + 0.45 * s) * (0.82 + 0.18 * twinkle);
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+  ctx.shadowBlur = 6 * dpr();
+  ctx.beginPath();
+  // Vertical and horizontal spikes as one concave star outline.
+  ctx.moveTo(x, y - long);
+  ctx.lineTo(x + w, y - w);
+  ctx.lineTo(x + short, y);
+  ctx.lineTo(x + w, y + w);
+  ctx.lineTo(x, y + long);
+  ctx.lineTo(x - w, y + w);
+  ctx.lineTo(x - short, y);
+  ctx.lineTo(x - w, y - w);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawRings(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, t: number, scale: number, strength: number) {
   for (let j = 0; j < 2; j++) {
     const phase = (t / 2200 + j * 0.5) % 1;
@@ -213,17 +275,30 @@ export function drawNode(node: PNode, ctx: CanvasRenderingContext2D, scale: numb
   const pulsing = node.live || state.focusIndex > 0;
   if (pulsing) drawRings(ctx, x, y, r, node.live && !state.focusIndex ? color : color, state.t, scale, 1);
 
-  ctx.shadowColor = color;
-  ctx.shadowBlur = (10 + r * scale * 1.1) * ratio * state.alpha;
+  // Upcoming events make the node a brighter star: stronger glow, lighter fill, sparkle.
+  const s = starStrength(node.upcoming ?? 0);
+  const look = s > 0 ? starLook(node.id, color, s) : null;
+  const twinkle = look ? Math.sin(state.t / 650 + look.phase) : 0;
+  const blurBoost = look ? 1 + 1.2 * s * (0.9 + 0.1 * twinkle) : 1;
+  ctx.shadowColor = look ? look.glow : color;
+  ctx.shadowBlur = (10 + r * scale * 1.1) * blurBoost * ratio * state.alpha;
   const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.05, x, y, r);
-  g.addColorStop(0, tint(color, 0.45));
-  g.addColorStop(0.6, color);
-  g.addColorStop(1, color);
+  g.addColorStop(0, look ? look.hi : tint(color, 0.45));
+  g.addColorStop(0.6, look ? look.body : color);
+  g.addColorStop(1, look ? look.body : color);
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fillStyle = g;
   ctx.fill();
+  // A second glow pass doubles the halo intensity for the brightest stars.
+  if (look && s > 0.6) {
+    ctx.shadowBlur *= 1.6;
+    ctx.globalAlpha = state.alpha * (s - 0.6) * 1.5;
+    ctx.fill();
+    ctx.globalAlpha = state.alpha;
+  }
   ctx.shadowColor = 'transparent';
+  if (look) drawSparkle(ctx, x, y, r, s, twinkle, scale);
 
   if (state.selected || state.hovered || state.focusIndex > 0) {
     ctx.beginPath();
