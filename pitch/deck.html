@@ -132,8 +132,8 @@ h2 .dim{color:var(--t3);font-weight:300}
 /* ---------- 10 ---------- */
 .imp{display:flex;align-items:baseline;gap:24px;margin-bottom:34px}
 .imp b{font:700 46px/1 Roboto;letter-spacing:-.02em;min-width:0}
-.road{position:absolute;left:1020px;top:410px;width:780px}
-.road .r{display:flex;gap:26px;align-items:flex-start;position:relative;padding-bottom:26px}
+.road{position:absolute;left:1020px;top:360px;width:780px}
+.road .r{display:flex;gap:26px;align-items:flex-start;position:relative;padding-bottom:14px}
 .road .r::before{content:"";position:absolute;left:13px;top:34px;bottom:0;width:2px;background:linear-gradient(#2a83ff,#2a2a2a)}
 .road .r:last-child::before{display:none}
 .road .d{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--pri);background:#000;margin-top:4px;box-shadow:0 0 14px 2px rgba(42,131,255,.5)}
@@ -254,7 +254,7 @@ h2 .dim{color:var(--t3);font-weight:300}
     <p>Ask APU, powered by Gemini, gives the answer, not another link.</p>
     <div class="vis">
       <span class="bubble me">Can a Year 1 join the AI Club?</span>
-      <span class="bubble ai">Yes. It's open to all students, and they meet Thursdays.</span>
+      <span class="bubble ai">Yes, it's open to all APU students. Here's how to join &rarr;</span>
     </div>
   </div>
   <div class="pillar" style="left:695px">
@@ -302,12 +302,13 @@ h2 .dim{color:var(--t3);font-weight:300}
     <li><span class="b">3</span><div><h3>Live ticker</h3><p>What's starting soon, and who's going.</p></div></li>
     <li><span class="b">4</span><div><h3>Ask APU</h3><p>A guide that lights up the map.</p></div></li>
   </ol>
-  <div class="shot" style="left:660px;top:150px;width:1160px;height:725.5px"><img src="assets/explore.png" alt="APU Campus Graph explore view"></div>
+  <div class="shot" style="left:660px;top:150px;width:1160px;height:725.5px"><img src="assets/task-8b-explore.png" alt="APU Campus Graph explore view"></div>
   <!-- badges: image 1100x688 scaled to 1200 (x1.0909) at 620,150 -->
-  <span class="badge" style="left:862px;top:598px">1</span>
-  <span class="badge" style="left:1262px;top:334px">2</span>
-  <span class="badge" style="left:1138px;top:238px">3</span>
-  <span class="badge" style="left:1515px;top:234px">4</span>
+  <span class="badge" style="left:918px;top:596px">1</span>
+  <span class="badge" style="left:1135px;top:425px">2</span>
+  <span class="badge" style="left:1105px;top:239px">3</span>
+  <span class="badge" style="left:1465px;top:227px">4</span>
+  <div style="position:absolute;left:660px;top:892px;width:1160px;text-align:center;font:400 24px/1.3 Roboto;color:#9cc4ff">&#8593; Brighter star = event coming up</div>
   <div class="foot"><span class="brand"><span class="dot"></span>APU Campus Graph</span><span class="pg">06</span></div>
 </section>
 
@@ -324,7 +325,7 @@ h2 .dim{color:var(--t3);font-weight:300}
     <li><span class="b">2</span><div><h3>Gemini answers from the catalog</h3><p>Only real APU communities. It never invents a club.</p></div></li>
     <li><span class="b">3</span><div><h3>The map zooms in</h3><p>4 matches light up, and the best one opens its card.</p></div></li>
   </ol>
-  <div class="shot" style="left:640px;top:170px;width:1180px;height:737.5px"><img src="assets/focus.png" alt="Ask APU focus view"></div>
+  <div class="shot" style="left:640px;top:170px;width:1180px;height:737.5px"><img src="assets/task-8-02-first-reply-v2.png" alt="Ask APU focus view"></div>
   <div class="foot"><span class="brand"><span class="dot"></span>APU Campus Graph</span><span class="pg">07</span></div>
 </section>
 
@@ -349,8 +350,7 @@ h2 .dim{color:var(--t3);font-weight:300}
   <div class="ln" style="left:650px;top:775px;width:100px"></div><span class="pin" style="left:750px;top:776px"></span>
   <!-- right callouts -->
   <div class="co r" style="left:1290px;top:620px;width:520px">
-    <div class="gem">✦ Gemini reads club posters</div>
-    <h3>Paste a caption or poster.<br>The fine print fills itself.</h3>
+    <h3>Sample data clearly labelled until clubs publish real details</h3>
   </div>
   <div class="ln rev" style="left:1170px;top:706px;width:100px"></div><span class="pin" style="left:1170px;top:707px"></span>
   <div class="co r" style="left:1290px;top:890px;width:520px"><h3>Join · Go together · Add to my week</h3><p>One tap from "maybe" to "I'm in".</p></div>
@@ -380,7 +380,7 @@ h2 .dim{color:var(--t3);font-weight:300}
     <div class="k">Browser</div><h3>React + Vite</h3><p>Single-page app. Living graph and Ask APU chat.</p>
   </div>
   <div class="box hl" style="left:710px;top:390px;width:440px;height:300px">
-    <div class="k" style="color:#9cc4ff">Google Cloud Run</div><h3>Express API</h3><p>Sends the question and catalog to Gemini, then keeps only real club IDs.</p>
+    <div class="k" style="color:#9cc4ff">Google Cloud Run</div><h3>Express API</h3><p>Dockerised, deploy-ready. Sends the question and catalog to Gemini, then keeps only real club IDs.</p>
   </div>
   <div class="box" style="left:1310px;top:330px;width:490px;height:180px">
     <div class="k">Gemini</div><h3 style="font-size:32px">gemini-3.5-flash-lite</h3><p>Structured JSON output</p>
@@ -390,7 +390,7 @@ h2 .dim{color:var(--t3);font-weight:300}
   </div>
   <div class="tile" style="left:120px"><h3><i style="background:var(--pri)"></i>Grounded answers</h3><p>Only real club IDs ever reach the UI.</p></div>
   <div class="tile" style="left:546px"><h3><i style="background:var(--spo)"></i>Offline fallback</h3><p>A local matcher takes over, so the demo never dies.</p></div>
-  <div class="tile" style="left:972px"><h3><i style="background:var(--int)"></i>Reads posters</h3><p>Gemini multimodal pulls fees and deadlines from images.</p></div>
+  <div class="tile" style="left:972px"><h3><i style="background:var(--int)"></i>Cloud Run ready</h3><p>Dockerised and deploy-ready on Google Cloud Run.</p></div>
   <div class="tile" style="left:1398px"><h3><i style="background:var(--live)"></i>Honest data</h3><p>Sample values are clearly labelled as sample data.</p></div>
   <div class="foot"><span class="brand"><span class="dot"></span>APU Campus Graph</span><span class="pg">09</span></div>
 </section>
@@ -412,14 +412,16 @@ h2 .dim{color:var(--t3);font-weight:300}
   </div>
   <div class="road">
     <div style="font:500 20px/1 'Roboto Mono';letter-spacing:.12em;color:var(--t3);margin:-40px 0 34px">ROADMAP</div>
+    <div class="r"><span class="d"></span><div><h3>Gemini reads club posters &rarr; fine print fills itself</h3><p>Paste a caption or poster; details fill in.</p></div></div>
     <div class="r"><span class="d"></span><div><h3>Student Affairs feed &amp; club admin</h3><p>Clubs keep their own card up to date.</p></div></div>
     <div class="r"><span class="d"></span><div><h3>APSpace timetable sync</h3><p>Real "fits your timetable" for every student.</p></div></div>
     <div class="r"><span class="d"></span><div><h3>Real event calendar</h3><p>Every star's brightness comes from live events.</p></div></div>
     <div class="r"><span class="d"></span><div><h3>Attendance → recommendations</h3><p>Suggest the next club after the first one.</p></div></div>
   </div>
   <div class="links">
-    <div class="link" style="flex:.7"><span class="k">Live demo</span><span class="v">________</span></div>
+    <div class="link" style="flex:.7"><span class="k">Live demo</span><span class="v">________</span><!-- LIVE_URL --></div>
     <div class="link" style="flex:1.3"><span class="k">Code</span><span class="v">github.com/youamar/apu-campus-graph</span></div>
+    <div class="link" style="flex:1"><span class="k">Demo video</span><span class="v">in repo /video</span></div>
   </div>
   <div class="foot"><span class="brand"><span class="dot"></span>Every club at APU. One living map. Just ask.</span><span class="pg">10</span></div>
 </section>
