@@ -1,15 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "jsx": "preserve",
-    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "noEmit": false,
-    "outDir": "dist-server",
-    "rootDir": "."
+    "noEmit": true
   },
-  "include": ["server", "shared", "src/data", "src/card/fit.ts", "src/profile/profile.ts", "data/*.json"],
-  "exclude": ["**/*.test.ts"]
+  "include": ["server", "shared"]
 }

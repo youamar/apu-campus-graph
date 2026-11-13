@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
+    "build": "vite build && npm run build:server",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --format=esm --outfile=dist-server/index.js --packages=external",
+    "start": "node dist-server/index.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "@types/supertest": "^7.2.1",
     "@vitejs/plugin-react": "^6.3.0",
     "concurrently": "^10.0.7",
+    "esbuild": "^0.28.2",
     "jsdom": "^31.0.0",
     "supertest": "^7.3.2",
     "tsx": "^4.23.15",
