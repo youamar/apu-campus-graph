@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import CampusGraph, { type CampusGraphHandle } from './graph/CampusGraph';
+import type { GraphFilter } from './graph/layout';
 
 const THEME_KEY = 'apu-campus-graph/theme';
 const TABS = ['Dashboard', 'Timetable', 'Attendance', 'Campus Life', 'More'];
@@ -40,6 +42,10 @@ function readTheme(): Theme {
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(readTheme);
+  const [filter, setFilter] = useState<GraphFilter>('all');
+  const [focusIds, setFocusIds] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const graphRef = useRef<CampusGraphHandle>(null);
 
   useEffect(() => {
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
@@ -81,7 +87,20 @@ export default function App() {
           <div className="avatar" aria-label="Profile">AP</div>
         </div>
       </header>
-      <main className="main" />
+      <main className="main">
+        <section className="graph-area" aria-label="Campus communities graph">
+          <CampusGraph
+            ref={graphRef}
+            focusIds={focusIds}
+            selectedId={selectedId}
+            filter={filter}
+            onSelect={setSelectedId}
+            onFilterChange={setFilter}
+            onReset={() => setFocusIds([])}
+          />
+        </section>
+        <aside className="side-panel" aria-label="Campus guide" />
+      </main>
     </div>
   );
 }
