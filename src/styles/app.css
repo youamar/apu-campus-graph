@@ -1,0 +1,32 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); }
+.app { display: flex; flex-direction: column; height: 100%; }
+.toolbar {
+  height: 64px; flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--step-100);
+}
+.toolbar-left, .toolbar-right, .tabs { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--primary); color: #fff;
+  font-weight: 700; display: grid; place-items: center;
+}
+.brand { font-size: 18px; font-weight: 700; }
+.divider { width: 1px; height: 20px; background: var(--step-100); }
+.section { font-size: 16px; font-weight: 500; color: var(--primary); }
+.tabs { gap: 4px; margin-right: 12px; }
+.tab {
+  background: none; border: 0; color: var(--text); font: inherit; font-size: 14px;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+}
+.tab.active { color: var(--primary); font-weight: 700; background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.icon-btn {
+  background: none; border: 0; color: var(--text); width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; font-size: 16px;
+}
+.icon-btn:hover { background: var(--step-100); }
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--step-100); color: var(--text);
+  display: grid; place-items: center; font-size: 13px; font-weight: 500;
+}
+.main { flex: 1; min-height: 0; }
