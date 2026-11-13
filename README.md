@@ -42,11 +42,11 @@ The `.env` file is excluded from the image; pass secrets at runtime.
 ```
 gcloud auth login
 gcloud config set project <PROJECT_ID>
-gcloud secrets create gemini-key --data-file=-     # paste the key, then Ctrl+D
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
+printf '%s' "$GEMINI_API_KEY" | gcloud secrets create gemini-key --data-file=-
+gcloud secrets add-iam-policy-binding gemini-key   --member=serviceAccount:<PROJECT_NUMBER>-compute@developer.gserviceaccount.com   --role=roles/secretmanager.secretAccessor
 gcloud run deploy apu-campus-graph --source . --region asia-southeast1 \
   --allow-unauthenticated \
-  --set-env-vars GEMINI_MODEL=gemini-2.5-flash \
+  --set-env-vars GEMINI_MODEL=gemini-3.5-flash-lite \
   --set-secrets GEMINI_API_KEY=gemini-key:latest
 ```
-
-The Cloud Run service account needs the Secret Manager Secret Accessor role on `gemini-key`.

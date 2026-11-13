@@ -3,3 +3,6 @@ dist
 dist-server
 .env
 .superpowers/
+.claude/
+.env.*
+!.env.example
