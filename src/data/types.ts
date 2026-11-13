@@ -27,6 +27,8 @@ export interface Community {
   instagram?: string;
   moreInfoUrl?: string;
   joinUrl?: string;
+  /** Student Affairs page that lists this community. */
+  subpageUrl?: string;
   logoUrl?: string;
   activity: number; // 1-5
   tags: string[];

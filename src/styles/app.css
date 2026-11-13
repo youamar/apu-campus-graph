@@ -26,6 +26,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
 }
 .icon-btn:hover { background: var(--step-100); }
 .avatar {
+  border: 0; font-family: inherit; cursor: pointer; padding: 0;
   width: 34px; height: 34px; border-radius: 50%; background: var(--step-100); color: var(--text);
   display: grid; place-items: center; font-size: 13px; font-weight: 500;
 }
@@ -93,7 +94,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
 .cg-crumb-text { font-size: 14px; font-weight: 500; text-shadow: 0 1px 8px #000; }
 
 .cg-bottom {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 0 20px 20px;
+  position: absolute; left: 0; right: var(--cg-inset, 0px); bottom: 0; padding: 0 20px 20px;
   display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none;
 }
 .cg-bottom > * { pointer-events: auto; }

@@ -49,6 +49,9 @@ const TAG_KEYWORDS: [string, RegExp][] = [
   ['women', /women|girls|ladies|female/],
 ];
 
+/** Every interest tag the catalog can derive, in table order. */
+export const TAGS: string[] = TAG_KEYWORDS.map(([t]) => t);
+
 export function deriveTags(name: string, description: string, category: CategoryKey): string[] {
   const text = `${name} ${description}`.toLowerCase();
   const tags = TAG_KEYWORDS.filter(([, re]) => re.test(text)).map(([t]) => t);
@@ -83,6 +86,7 @@ export function buildCatalog(rawClubs: RawClub[], enrichment: Enrichment): Commu
       instagram: parseInstagram(r.social),
       moreInfoUrl: r.more_info_url ?? undefined,
       joinUrl: r.join_url ?? undefined,
+      subpageUrl: r.subpage_url ?? undefined,
       logoUrl: r.logo_url ?? undefined,
       activity: hashActivity(id),
       tags: deriveTags(name, description, category),

@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import DetailCard from './card/DetailCard';
+import { catalog } from './data/catalog';
 import CampusGraph, { type CampusGraphHandle } from './graph/CampusGraph';
 import type { GraphFilter } from './graph/layout';
+import { emptyProfile, loadProfile, saveProfile, toggleId, type Profile } from './profile/profile';
+import ProfileSheet from './profile/ProfileSheet';
 
 const THEME_KEY = 'apu-campus-graph/theme';
 const TABS = ['Dashboard', 'Timetable', 'Attendance', 'Campus Life', 'More'];
@@ -32,6 +36,15 @@ const MoonIcon = () => (
 
 type Theme = 'dark' | 'light';
 
+/** Card width plus its 16px margins: the graph keeps focused nodes left of this. */
+const CARD_INSET = 392 + 32;
+
+/** Dev-only deep links for screenshots: ?card=<id>, ?profile=1, ?focus=<id,id>. */
+function devParam(name: string): string | null {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get(name);
+}
+
 function readTheme(): Theme {
   try {
     return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
@@ -43,9 +56,35 @@ function readTheme(): Theme {
 export default function App() {
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [filter, setFilter] = useState<GraphFilter>('all');
-  const [focusIds, setFocusIds] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [focusIds, setFocusIds] = useState<string[]>(() => devParam('focus')?.split(',').filter(Boolean) ?? []);
+  const [selectedId, setSelectedId] = useState<string | null>(() => devParam('card'));
+  const [profile, setProfile] = useState<Profile | null>(loadProfile);
+  const [profileOpen, setProfileOpen] = useState(() => devParam('profile') === '1');
   const graphRef = useRef<CampusGraphHandle>(null);
+
+  const selected = useMemo(() => catalog.find((c) => c.id === selectedId) ?? null, [selectedId]);
+
+  useEffect(() => {
+    if (profile) saveProfile(profile);
+  }, [profile]);
+
+  /** Opens the profile sheet. Task 8's chat calls this after the first message. */
+  const openProfile = useCallback(() => setProfileOpen(true), []);
+  const closeCard = useCallback(() => setSelectedId(null), []);
+  const toggleGoing = useCallback(
+    (id: string) => setProfile((p) => {
+      const base = p ?? emptyProfile();
+      return { ...base, going: toggleId(base.going, id) };
+    }),
+    [],
+  );
+  const toggleWeek = useCallback(
+    (id: string) => setProfile((p) => {
+      const base = p ?? emptyProfile();
+      return { ...base, week: toggleId(base.week, id) };
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
@@ -84,7 +123,15 @@ export default function App() {
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
-          <div className="avatar" aria-label="Profile">AP</div>
+          <button
+            type="button"
+            className={profile ? 'avatar set' : 'avatar'}
+            aria-label="Your profile"
+            aria-haspopup="dialog"
+            onClick={openProfile}
+          >
+            {profile ? `Y${profile.year}` : 'AP'}
+          </button>
         </div>
       </header>
       <main className="main">
@@ -97,10 +144,34 @@ export default function App() {
             onSelect={setSelectedId}
             onFilterChange={setFilter}
             onReset={() => setFocusIds([])}
+            rightInset={selected ? CARD_INSET : 0}
           />
+          {selected && (
+            <div className="card-dock">
+              <DetailCard
+                key={selected.id}
+                community={selected}
+                profile={profile}
+                onClose={closeCard}
+                onToggleGoing={toggleGoing}
+                onToggleWeek={toggleWeek}
+                onEditProfile={openProfile}
+              />
+            </div>
+          )}
         </section>
         <aside className="side-panel" aria-label="Campus guide" />
       </main>
+      {profileOpen && (
+        <ProfileSheet
+          profile={profile}
+          onClose={() => setProfileOpen(false)}
+          onSave={(p) => {
+            setProfile(p);
+            setProfileOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
