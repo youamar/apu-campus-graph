@@ -429,7 +429,8 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
           width={size.w}
           height={size.h}
           graphData={data}
-          backgroundColor="#000000"
+          // Transparent so the themed .cg background (--graph-bg) shows through.
+          backgroundColor="rgba(0, 0, 0, 0)"
           nodeId="id"
           nodeCanvasObject={paintNode}
           nodeCanvasObjectMode={() => 'replace'}
@@ -450,7 +451,8 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
             if (focusRef.current.length) zoomToFocus(focusRef.current);
             else fitAll(0);
           }}
-          minZoom={0.4}
+          // Low floor so a phone-width portrait canvas can still fit the whole graph.
+          minZoom={0.15}
           maxZoom={8}
           showPointerCursor={(o) => !!o && (o as PNode).kind === 'community'}
           onNodeHover={(n) => setHoverId(n && n.kind === 'community' ? n.id : null)}

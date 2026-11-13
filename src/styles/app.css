@@ -117,3 +117,201 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
 .cg-zoom .cg-fit { font-size: 11px; font-weight: 500; }
 .cg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .cg-live-dot { animation: none; } }
+
+/* ======================================================================
+   ---- theme: graph window + light ink (Task 10) ----
+   The graph canvas is transparent; its night sky comes from --graph-bg.
+   ====================================================================== */
+.cg { background: var(--graph-bg); }
+.tabbar, .card-scrim { display: none; }
+.card-scrim { pointer-events: auto; }
+
+/* Light desktop: the graph sits in the page as a dark rounded window. */
+@media (min-width: 900px) {
+  :root[data-theme="light"] .graph-area { margin: 12px 0 12px 12px; }
+  :root[data-theme="light"] .cg {
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 12px 32px rgba(15, 23, 42, 0.14);
+  }
+  :root[data-theme="light"] .side-panel { border-left: 0; margin-left: 12px; box-shadow: -1px 0 0 var(--step-100); }
+}
+
+/* Coloured text tuned per theme (dark values are the originals). `.app` prefix outranks card.css, which loads later. */
+.app .dc-badge.ok, .app .dc-fit.fits { color: var(--ink-ok); }
+.app .dc-badge.warn { color: var(--ink-warn); }
+.app .dc-badge.info, .app .dc-link, .app .dc-source, .app .ps-num { color: var(--ink-info); }
+.app .dc-badge.hot, .app .dc-fit.clash { color: var(--ink-hot); }
+:root[data-theme="light"] .dc-btn.on, :root[data-theme="light"] .ps-chip.on { color: var(--ink-info); }
+:root[data-theme="light"] .dc { box-shadow: 0 24px 64px var(--elev-shadow), 0 0 0 1px rgba(15, 23, 42, 0.06); }
+:root[data-theme="light"] .ps { box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22); }
+:root[data-theme="light"] .ps-backdrop { background: var(--scrim); }
+
+/* ======================================================================
+   ---- mobile (Task 10): < 900px ----
+   Compact bar, full-bleed graph, chat bottom sheet, APSpace tab bar.
+   Keep the breakpoint in sync with MOBILE_QUERY in src/useMediaQuery.ts.
+   ====================================================================== */
+@media (max-width: 899px) {
+  :root {
+    --bar-h: 56px;
+    --tab-h: 60px;
+    --sheet-peek: 156px;
+    --sheet-lap: 22px; /* how far the graph runs on under the sheet's rounded top */
+    --tab-space: calc(var(--tab-h) + env(safe-area-inset-bottom));
+  }
+  html, body { overscroll-behavior: none; }
+  body { -webkit-tap-highlight-color: transparent; }
+  .app { height: 100dvh; }
+  .desktop-only { display: none !important; }
+
+  /* Top bar: brand + theme + avatar. */
+  .toolbar {
+    height: calc(var(--bar-h) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 10px 0 16px;
+  }
+  .toolbar-left { gap: 10px; min-width: 0; }
+  .toolbar-right { gap: 4px; }
+  .logo { width: 30px; height: 30px; font-size: 15px; }
+  .brand { font-size: 17px; }
+  .divider { height: 18px; }
+  .section { font-size: 15px; white-space: nowrap; }
+  .icon-btn { width: 40px; height: 40px; }
+  .avatar { width: 34px; height: 34px; margin-left: 2px; }
+
+  /* The graph fills everything between the bar and the collapsed sheet. */
+  .main { position: relative; padding-bottom: calc(var(--tab-space) + var(--sheet-peek) - var(--sheet-lap)); }
+  .cg canvas { touch-action: none; }
+
+  .cg-top { padding: 14px 0 0; }
+  .cg-heading { align-items: stretch; padding: 0 16px; }
+  .cg-heading h1 { font-size: 22px; line-height: 28px; }
+  .cg-heading p { display: none; }
+  .cg-chips {
+    margin: 12px -16px 0; padding: 0 16px 2px; overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .cg-chips::-webkit-scrollbar { display: none; }
+  .cg-chip { height: 34px; flex: none; }
+  .cg.has-inset .cg-chips { flex-wrap: nowrap; }
+  .cg.has-inset .cg-top { padding-right: 0; }
+
+  .cg-top .cg-ticker {
+    position: static; margin: 10px 16px 0; max-width: calc(100% - 32px); height: 32px; padding: 0 12px;
+    font-size: 12px; gap: 7px;
+  }
+  .cg-ticker strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  button.cg-ticker > .cg-muted { display: none; }
+  .cg-ticker > .cg-muted:only-of-type { overflow: hidden; text-overflow: ellipsis; }
+
+  .cg-crumbs { padding: 0 16px; gap: 12px; }
+  .cg-back { height: 34px; padding: 0 14px; }
+  .cg-crumb-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+  .cg-bottom { padding: 0 12px calc(var(--sheet-lap) + 10px); align-items: flex-end; gap: 8px; }
+  .cg-legend { display: none; }
+  .cg-hint { height: auto; min-height: 34px; padding: 7px 14px; font-size: 12px; white-space: normal; line-height: 16px; }
+  .cg-hint .cg-muted { display: none; }
+  .cg-zoom { margin-left: auto; border-radius: 50%; }
+  .cg-zoom button:not(.cg-fit) { display: none; }
+  .cg-zoom button { width: 38px; height: 38px; }
+
+  /* APSpace tab bar. */
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 26;
+    height: var(--tab-space); padding: 0 4px env(safe-area-inset-bottom);
+    background: var(--surface); border-top: 1px solid var(--step-100);
+  }
+  .tabbar-btn {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: 0; padding: 0; color: var(--muted); font: inherit; font-size: 11px; font-weight: 500;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
+  .tabbar-btn span { white-space: nowrap; }
+  .tabbar-btn svg { width: 24px; height: 24px; transition: transform 160ms ease; }
+  .tabbar-btn.active { color: var(--primary); font-weight: 700; }
+  .tabbar-btn.active svg { stroke-width: 2.1; }
+  .tabbar-btn:active svg { transform: scale(0.9); }
+  .tabbar-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -4px; border-radius: 12px; }
+
+  /* Ask APU as a bottom sheet. */
+  .side-panel.chat.sheet {
+    position: fixed; left: 0; right: 0; bottom: var(--tab-space); z-index: 30; width: auto;
+    height: var(--sheet-peek); padding-bottom: 10px;
+    border: 0; border-top: 1px solid var(--step-100); border-radius: 20px 20px 0 0;
+    box-shadow: 0 -12px 40px var(--elev-shadow);
+    transition: height 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .side-panel.chat.sheet.expanded { height: 75dvh; }
+  .side-panel.chat.sheet.dragging { transition: none; }
+  .sheet-grab { flex: none; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .sheet-handle {
+    display: block; width: 100%; height: 18px; padding: 8px 0 0; border: 0; background: none; cursor: grab;
+  }
+  .sheet-handle span { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--handle); margin: 0 auto; }
+  .sheet-handle:focus-visible { outline: none; }
+  .sheet-handle:focus-visible span { background: var(--primary); }
+  .sheet .chat-head { padding: 2px 16px 10px; gap: 10px; }
+  .sheet .chat-mark { width: 30px; height: 30px; border-radius: 9px; }
+  .sheet .chat-mark svg { width: 17px; height: 17px; }
+  .sheet .chat-head-text { flex: 1; min-width: 0; }
+  .sheet .chat-head h2 { font-size: 16px; line-height: 20px; }
+  .sheet .chat-head p { font-size: 12px; line-height: 16px; margin-top: 0; }
+  .chat-peek { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .sheet.collapsed .chat-scroll { display: none; }
+  .sheet.collapsed.dragging .chat-scroll { display: flex; }
+  .sheet .chat-scroll { padding: 0 16px 12px; }
+  .sheet .chat-bubble.user { max-width: 82%; }
+
+  .chat-quick {
+    flex: none; display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 10px;
+    scrollbar-width: none; overscroll-behavior-x: contain;
+  }
+  .chat-quick::-webkit-scrollbar { display: none; }
+  .chat-quick .chat-chip { flex: none; white-space: nowrap; padding: 6px 12px; }
+
+  .sheet .chat-input { margin: 0 12px; padding: 4px 4px 4px 14px; border-radius: 14px; }
+  .sheet .chat-input textarea { font-size: 16px; line-height: 22px; padding: 9px 0; }
+  /* The peek has a fixed height: a long draft scrolls inside one line instead of pushing under the tab bar. */
+  .sheet.collapsed .chat-input textarea { max-height: 40px; }
+  .sheet .chat-send { border-radius: 10px; }
+  .sheet .chat-foot { display: none; }
+
+  .sheet-scrim {
+    position: fixed; inset: 0; z-index: 29; background: var(--scrim); animation: m-fade 200ms ease both;
+  }
+  /* Typing: the keyboard takes the tab bar's place, so the sheet rides on it. */
+  .app:has(.sheet .chat-input textarea:focus) .tabbar { display: none; }
+  .app:has(.sheet .chat-input textarea:focus) .side-panel.chat.sheet {
+    bottom: 0; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  /* Detail card: a full-height sheet over everything but the profile sheet (.app outranks card.css). */
+  .app .card-dock {
+    position: fixed; inset: 0; width: auto; z-index: 40;
+    padding-top: calc(env(safe-area-inset-top) + 12px);
+  }
+  .card-scrim { display: block; position: absolute; inset: 0; background: var(--scrim); animation: m-fade 200ms ease both; }
+  .app .dc {
+    position: relative; flex: 1; max-height: none; border-radius: 20px 20px 0 0; border-bottom: 0;
+    animation: m-up 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .app .dc-head { padding: 18px 12px 14px 18px; }
+  .app .dc-close { width: 36px; height: 36px; background: var(--step-100); color: var(--text); }
+  .app .dc-actions { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+
+  /* Profile sheet rises from the bottom too. */
+  .app .ps-backdrop { padding: 0; place-items: end stretch; }
+  .app .ps { width: 100%; max-height: 92dvh; border-radius: 20px 20px 0 0; animation: m-up 320ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .app .ps-head { padding: 20px 14px 12px 18px; }
+  .app .ps-body { padding: 4px 18px 8px; }
+  .app .ps-grid { grid-template-columns: 70px repeat(7, 1fr); gap: 4px; }
+  .app .ps-foot { padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); flex-wrap: wrap; }
+
+  @keyframes m-fade { from { opacity: 0; } }
+  @keyframes m-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+
+@media (max-width: 899px) and (prefers-reduced-motion: reduce) {
+  .side-panel.chat.sheet { transition: none; }
+  .sheet-scrim, .card-scrim, .app .dc, .app .ps { animation: none; }
+}
