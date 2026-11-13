@@ -80,3 +80,8 @@ for n in "${ORDER[@]}"; do
   d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$B/$n.mp4")
   printf "%7.2fs  %s\n" "$t" "$n"; t=$(awk "BEGIN{print $t+$d}")
 done
+
+# Soundtrack: score + voiceover are rebuilt and muxed by audio/build.sh (-> APU-Campus-Graph-Promo-sound.mp4).
+# AI shots shift the timings: audio/build.sh reads build/ai1.mp4 / build/ai2.mp4 durations and moves every cue.
+# Set WITH_SOUND=1 to run it automatically after this cut.
+if [ -n "${WITH_SOUND:-}" ]; then IN="$PWD/$OUT" bash audio/build.sh; fi

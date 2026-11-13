@@ -12,3 +12,6 @@ video/node_modules/
 video/frames/
 video/build/
 video/tmp/
+video/audio/vo/
+video/audio/*.wav
+video/audio/tmp/
