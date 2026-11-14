@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { GuideReply } from '../../shared/guide';
-import * as guide from '../../shared/guide';
+import { catalog, events } from '../data/catalog';
+import type { Community } from '../data/types';
 import { toWire, useGuide } from './useGuide';
 
 const geminiReply: GuideReply = {
@@ -22,7 +23,7 @@ describe('useGuide', () => {
     const fetchMock = vi.fn(() => new Promise<Response>((r) => { resolve = r; }));
     vi.stubGlobal('fetch', fetchMock);
     const onReply = vi.fn();
-    const { result } = renderHook(() => useGuide({ profile: null, onReply }));
+    const { result } = renderHook(() => useGuide({ profile: null, catalog, events, onReply }));
 
     let done!: Promise<void>;
     act(() => {
@@ -52,7 +53,7 @@ describe('useGuide', () => {
 
   it('falls back to the local matcher with source offline when fetch rejects', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
-    const { result } = renderHook(() => useGuide({ profile: null }));
+    const { result } = renderHook(() => useGuide({ profile: null, catalog, events }));
     await act(async () => {
       await result.current.send('Any photography clubs?');
     });
@@ -64,7 +65,7 @@ describe('useGuide', () => {
 
   it('falls back offline on a non-OK response', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('{"error":"x"}', { status: 500 }))));
-    const { result } = renderHook(() => useGuide({ profile: null }));
+    const { result } = renderHook(() => useGuide({ profile: null, catalog, events }));
     await act(async () => {
       await result.current.send('football');
     });
@@ -74,7 +75,7 @@ describe('useGuide', () => {
   it('ignores blank input and sends nothing', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useGuide({ profile: null }));
+    const { result } = renderHook(() => useGuide({ profile: null, catalog, events }));
     await act(async () => {
       await result.current.send('   ');
     });
@@ -86,10 +87,9 @@ describe('useGuide', () => {
 describe('useGuide resilience', () => {
   it('recovers when the offline matcher itself throws: safe reply, and the next send still works', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
-    vi.spyOn(guide, 'localMatch').mockImplementationOnce(() => {
-      throw new Error('boom');
-    });
-    const { result } = renderHook(() => useGuide({ profile: null }));
+    // A community with no description makes the offline matcher throw: tested through the hook's interface.
+    let cat: Community[] = [...catalog, { ...catalog[0], id: 'broken', description: undefined as unknown as string }];
+    const { result, rerender } = renderHook(() => useGuide({ profile: null, catalog: cat, events }));
     await act(async () => {
       await result.current.send('photography');
     });
@@ -98,6 +98,8 @@ describe('useGuide resilience', () => {
     expect(result.current.last?.reply).toMatch(/\S/);
     expect(result.current.last?.suggestions).toHaveLength(3);
 
+    cat = catalog;
+    rerender();
     await act(async () => {
       await result.current.send('football');
     });
@@ -109,7 +111,7 @@ describe('useGuide resilience', () => {
     const reply = { ...geminiReply, focusIds: ['ghost-club', 'apu-photography-club'], openId: 'ghost-club' };
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify(reply), { status: 200 }))));
     const onReply = vi.fn();
-    const { result } = renderHook(() => useGuide({ profile: null, onReply }));
+    const { result } = renderHook(() => useGuide({ profile: null, catalog, events, onReply }));
     await act(async () => {
       await result.current.send('photo');
     });

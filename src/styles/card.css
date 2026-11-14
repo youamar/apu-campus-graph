@@ -204,3 +204,25 @@
 .dc-badges-sample { display: inline-flex; align-items: center; margin-left: 2px; }
 .dc-sample-count { text-decoration: underline dotted color-mix(in srgb, var(--text) 45%, transparent); text-underline-offset: 3px; }
 .dc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.dc-official { margin: 8px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--text-2, var(--muted)); }
+.dc-official-tag {
+  display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 600;
+  color: var(--success, #42ba96); background: color-mix(in srgb, var(--success, #42ba96) 14%, transparent);
+}
+
+.dc-coming { margin: 8px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); font-style: italic; }
+
+/* Poster reader (fine print from a club post) */
+.pr-open { margin-top: 10px; padding: 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; text-align: left; }
+.pr-open:hover { text-decoration: underline; }
+.pr { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pr-label, .pr-file span { font-size: 12px; color: var(--muted); }
+.pr-text { width: 100%; box-sizing: border-box; resize: vertical; min-height: 72px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--step-200, rgba(127,127,127,.35)); background: var(--bg, transparent); color: inherit; font: inherit; font-size: 13px; }
+.pr-text:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.pr-file { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; }
+.pr-file em { color: var(--muted); font-style: normal; }
+.pr-row { display: flex; gap: 8px; }
+.pr-go { flex: 1; }
+.pr-status { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); min-height: 1em; }
+.pr-error { color: var(--danger, #e04a5a); }

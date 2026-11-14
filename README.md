@@ -37,6 +37,17 @@ docker run -p 8080:8080 --env-file .env apu-campus-graph   # http://localhost:80
 
 The `.env` file is excluded from the image; pass secrets at runtime.
 
+## How the guide works (agent loop)
+
+Each question runs a small Gemini agent (`server/chat.ts` `runAgent`, tools in `server/agent.ts`):
+
+1. **Plan with tools** – Gemini function calling picks `search_clubs`, `get_club` and `upcoming_events`; the server runs them on the real catalog and returns the results (up to 3 tool rounds).
+2. **Answer as actions** – the final answer is structured JSON: reply text plus `focusIds` (focus the map) and `openId` (open a card). Every id is checked against the catalog.
+3. **Check and repair** – a validator flags club names that don't exist, sample fees/deadlines stated as fact, and role-play voices from prompt injection; the problems go back to Gemini once as a `[Validator]` message.
+4. **Never dies** – student text is fenced in `<student_message>` tags, one retry on 503/timeouts, a warm-up ping on page load, then the offline matcher.
+
+The chat shows the steps it took (e.g. "Searched clubs", "Read Photography Club", "Checked the answer").
+
 ## Deploy to Cloud Run
 
 ```

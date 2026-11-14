@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import type { GuideReply } from '../../shared/guide';
+import type { Extracted } from '../data/extracted';
 import type { CampusEvent, Community } from '../data/types';
 import type { Profile } from '../profile/profile';
 import { useGuide, type ChatMsg } from './useGuide';
@@ -87,9 +88,14 @@ const ArrowIcon = () => (
   </svg>
 );
 
+/** Communities the agent added to the student's week in this reply. */
+const weekAdds = (r?: GuideReply) => r?.actions?.filter((a) => a.type === 'add_to_week').flatMap((a) => a.ids) ?? [];
+
 export interface ChatPanelProps {
   catalog: Community[];
   events: CampusEvent[];
+  /** Fine print read from club posts on this device, sent so the guide knows it. */
+  extracted?: Extracted;
   profile: Profile | null;
   /** A reply arrived: focus the graph and/or open a card. */
   onReply(reply: GuideReply): void;
@@ -105,6 +111,7 @@ export interface ChatPanelProps {
 export default function ChatPanel({
   catalog,
   events,
+  extracted,
   profile,
   onReply,
   onEvent,
@@ -112,7 +119,7 @@ export default function ChatPanel({
   onEditProfile,
   sheet = false,
 }: ChatPanelProps) {
-  const { messages, send, pending } = useGuide({ profile, onReply });
+  const { messages, send, pending } = useGuide({ profile, catalog, events, extracted, onReply });
   const [draft, setDraft] = useState('');
   const [promptEligible] = useState(() => !readFlag(PROMPT_KEY));
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -268,12 +275,27 @@ export default function ChatPanel({
               ))}
             </ol>
           )}
+          {weekAdds(r).length > 0 && (
+            <p className="chat-week" role="status">
+              <span aria-hidden="true">✓</span> Added to your week:{' '}
+              {weekAdds(r)
+                .map((id) => byId.get(id)?.shortName ?? id)
+                .join(', ')}
+            </p>
+          )}
           {opened && (
             <button type="button" className="chat-opened" onClick={() => open(opened.id)}>
               <Sparkle size={12} /> {opened.shortName} card opened
             </button>
           )}
         </div>
+        {r?.trace && r.trace.length > 0 && (
+          <ol className="chat-trace" aria-label="What the guide did">
+            {r.trace.map((t, i) => (
+              <li key={i}>{t}</li>
+            ))}
+          </ol>
+        )}
         {r?.source === 'offline' && (
           <p className="chat-offline">Offline mode · answered from the bundled club list</p>
         )}

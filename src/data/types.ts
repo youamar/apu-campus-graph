@@ -8,6 +8,8 @@ export interface FinePrint {
   deadline?: string;
   source?: string;
   extractedAt?: string;
+  /** Who read it from the club's post: Gemini or the offline text reader. */
+  by?: 'gemini' | 'offline';
   sample?: boolean;
 }
 
@@ -40,6 +42,8 @@ export interface Community {
   vibeQuote?: string;
   interested?: number;
   finePrint?: FinePrint;
+  /** Verbatim text published by Student Affairs (real, never sample). */
+  official?: { meetingTimes?: string; eligibility?: string };
   sample: boolean;
 }
 

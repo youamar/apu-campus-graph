@@ -1,8 +1,10 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import type { Community, FinePrint } from '../data/types';
+import type { CampusEvent, Community, FinePrint } from '../data/types';
 import { CATEGORY_COLOR, CATEGORY_NAME } from '../graph/layout';
 import type { Profile } from '../profile/profile';
-import { canJoin, formatSlot, joinHref, joinLabel, NO_FREE_TIMES, scheduleCoverage, timeFit } from './fit';
+import { clubFacts } from './facts';
+import PosterReader from './PosterReader';
+import { formatSlot, NO_FREE_TIMES, scheduleCoverage } from './fit';
 import { initials, vibeCaptions } from './vibe';
 
 export interface DetailCardProps {
@@ -13,6 +15,10 @@ export interface DetailCardProps {
   onToggleWeek(id: string): void;
   /** Opens the profile sheet, offered when the time-fit needs free times. */
   onEditProfile?(): void;
+  /** Events, for the "Coming up" line (all sample). */
+  events?: CampusEvent[];
+  /** Saves fine print read from a club post (poster reader); omit to hide the reader. */
+  onExtracted?(communityId: string, fp: FinePrint): void;
 }
 
 const icon = {
@@ -80,9 +86,13 @@ export default function DetailCard({
   onToggleGoing,
   onToggleWeek,
   onEditProfile,
+  events = [],
+  onExtracted,
 }: DetailCardProps) {
-  const join = canJoin(c, profile);
-  const fit = timeFit(c, profile);
+  // One read with provenance attached (the guide's get_club renders the same facts).
+  const facts = clubFacts(c, profile, events);
+  const { join, fit, provenance: prov } = facts;
+  const isSample = (s: string) => s === 'sample';
   const coverage = scheduleCoverage(c, profile);
   const going = profile?.going.includes(c.id) ?? false;
   const inWeek = profile?.week.includes(c.id) ?? false;
@@ -90,7 +100,7 @@ export default function DetailCard({
   const captions = vibeCaptions(c);
   const fp = c.finePrint;
   const fineRows = fp ? FINE_ROWS.filter(([k]) => typeof fp[k] === 'string' && fp[k]) : [];
-  const href = joinHref(c);
+  const href = facts.channel.href;
   const external = !href.startsWith('mailto:');
   const scheduleText = c.schedule?.length ? c.schedule.map(formatSlot).join(' · ') : '';
   const style = { '--cat': CATEGORY_COLOR[c.category] } as CSSProperties;
@@ -134,7 +144,7 @@ export default function DetailCard({
             “{c.vibeQuote}”
             <cite>
               — Club member
-              {c.sample && <SampleChip />}
+              {isSample(prov.quote) && <SampleChip />}
             </cite>
           </blockquote>
         ) : (
@@ -144,27 +154,38 @@ export default function DetailCard({
           </p>
         )}
 
-        <div className="dc-badges" role="list" aria-label={c.sample ? 'Highlights (sample data)' : 'Highlights'}>
+        <div className="dc-badges" role="list" aria-label={isSample(prov.flags) ? 'Highlights (sample data)' : 'Highlights'}>
           <span role="listitem" className={join.ok ? 'dc-badge ok' : 'dc-badge warn'} title={c.eligibility.note}>
             {join.ok ? <Check /> : <Alert />}
             {join.ok ? `You can join · ${join.reason.replace(/^Open/, 'open')}` : `Ask first · ${join.reason}`}
           </span>
           {c.beginnerFriendly && <span role="listitem" className="dc-badge info">Beginner-friendly</span>}
           {c.recruiting && <span role="listitem" className="dc-badge hot">Recruiting now</span>}
-          {c.sample && (c.beginnerFriendly || c.recruiting) && (
+          {isSample(prov.flags) && (
             <span role="listitem" className="dc-badges-sample">
               <SampleChip />
             </span>
           )}
         </div>
 
-        <Box title="Time commitment" chip={c.sample ? <SampleChip /> : undefined}>
+        {prov.eligibility === 'official' && (
+          <p className="dc-official">
+            <span className="dc-official-tag">Published</span> Who can join: {c.official?.eligibility}
+          </p>
+        )}
+
+        <Box title="Time commitment" chip={isSample(prov.schedule) || isSample(prov.hours) ? <SampleChip /> : undefined}>
           <div className="dc-hours">
             <strong className={c.hoursPerWeek ? undefined : 'dc-none'}>
               {c.hoursPerWeek ? prettyHours(c.hoursPerWeek) : 'Hours not published yet'}
             </strong>
             {scheduleText && <span>{scheduleText}</span>}
           </div>
+          {prov.schedule === 'official' && c.official?.meetingTimes && (
+            <p className="dc-official">
+              <span className="dc-official-tag">Published</span> {c.official.meetingTimes}
+            </p>
+          )}
           {c.schedule?.length ? (
             <div
               className={`dc-bar ${fit.status}`}
@@ -189,7 +210,14 @@ export default function DetailCard({
           </p>
         </Box>
 
-        <Box title="The fine print" chip={fp?.sample ? <SampleChip /> : undefined}>
+        {facts.upcoming.length > 0 && (
+          <p className="dc-coming">
+            <span className="dc-sample">Sample event</span> Coming up: {facts.upcoming[0].title} ·{' '}
+            {new Date(facts.upcoming[0].start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+          </p>
+        )}
+
+        <Box title="The fine print" chip={isSample(prov.finePrint) ? <SampleChip /> : undefined}>
           {fineRows.length ? (
             <dl className="dc-fine">
               {fineRows.map(([k, label]) => (
@@ -202,21 +230,22 @@ export default function DetailCard({
           ) : (
             <p className="dc-empty">Not published yet. Ask the guide to check their latest post.</p>
           )}
-          {fp?.source && !fp.sample && (
+          {fp?.source && prov.finePrint === 'official' && (
             <p className="dc-source">
               <Spark />
               <span>
-                Extracted by Gemini from {fp.source}
+                Extracted {fp.by === 'offline' ? 'automatically' : 'by Gemini'} from {fp.source}
                 {fp.extractedAt && <span className="dc-muted"> · {fp.extractedAt}</span>}
               </span>
             </p>
           )}
+          {onExtracted && <PosterReader communityId={c.id} clubName={c.shortName} onExtracted={onExtracted} />}
         </Box>
       </div>
 
       <footer className="dc-actions">
         <a className="dc-btn primary" href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
-          {joinLabel(c)}
+          {facts.channel.label}
           {external && <External />}
         </a>
         <div className="dc-row">
@@ -230,7 +259,7 @@ export default function DetailCard({
             {interested > 0 ? (
               <>
                 Go together ·{' '}
-                {c.sample ? (
+                {isSample(prov.interested) ? (
                   <span className="dc-sample-count" title="Sample data">
                     {interested} interested{' '}<span className="dc-sr">(sample data)</span>
                   </span>

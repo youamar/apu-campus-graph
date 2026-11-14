@@ -365,7 +365,7 @@ h2 .dim{color:var(--t3);font-weight:300}
   <svg class="stars" data-stars="30" data-seed="99"></svg>
   <div class="content">
     <div class="eyebrow"><span class="n">08</span><span class="bar"></span>How it's built</div>
-    <h2 style="font-size:64px">Built on Google Cloud.<br><span class="dim">Grounded by design.</span></h2>
+    <h2 style="font-size:64px">A Gemini agent with tools.<br><span class="dim">Checked before you see it.</span></h2>
   </div>
   <svg style="position:absolute;left:0;top:0;width:1920px;height:1080px" viewBox="0 0 1920 1080">
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2a83ff"/></marker></defs>
@@ -380,17 +380,17 @@ h2 .dim{color:var(--t3);font-weight:300}
     <div class="k">Browser</div><h3>React + Vite</h3><p>Single-page app. Living graph and Ask APU chat.</p>
   </div>
   <div class="box hl" style="left:710px;top:390px;width:440px;height:300px">
-    <div class="k" style="color:#9cc4ff">Google Cloud Run</div><h3>Express API</h3><p>Dockerised, deploy-ready. Sends the question and catalog to Gemini, then keeps only real club IDs.</p>
+    <div class="k" style="color:#9cc4ff">Agent loop · Express</div><h3>Plan → tools → check</h3><p>Gemini picks tools, the server runs them on real data, a validator checks the answer and sends mistakes back once.</p>
   </div>
   <div class="box" style="left:1310px;top:330px;width:490px;height:180px">
-    <div class="k">Gemini</div><h3 style="font-size:32px">gemini-3.5-flash-lite</h3><p>Structured JSON output</p>
+    <div class="k">Gemini function calling</div><h3 style="font-size:26px">search_clubs · get_club · events</h3><p>Answer = JSON actions: focus, open card</p>
   </div>
   <div class="box" style="left:1310px;top:550px;width:490px;height:180px">
     <div class="k">Catalog</div><h3 style="font-size:32px">137 real communities</h3><p>Scraped from Student Affairs</p>
   </div>
-  <div class="tile" style="left:120px"><h3><i style="background:var(--pri)"></i>Grounded answers</h3><p>Only real club IDs ever reach the UI.</p></div>
-  <div class="tile" style="left:546px"><h3><i style="background:var(--spo)"></i>Offline fallback</h3><p>A local matcher takes over, so the demo never dies.</p></div>
-  <div class="tile" style="left:972px"><h3><i style="background:var(--int)"></i>Cloud Run ready</h3><p>Dockerised and deploy-ready on Google Cloud Run.</p></div>
+  <div class="tile" style="left:120px"><h3><i style="background:var(--pri)"></i>Self-checking</h3><p>Made-up clubs, sample fees stated as fact and hijacked voices are caught and fixed.</p></div>
+  <div class="tile" style="left:546px"><h3><i style="background:var(--spo)"></i>Never dies</h3><p>Retry on 503, warm-up on load, then an offline matcher.</p></div>
+  <div class="tile" style="left:972px"><h3><i style="background:var(--int)"></i>Cloud Run ready</h3><p>Dockerised for Cloud Run. Live demo hosted on Render.</p></div>
   <div class="tile" style="left:1398px"><h3><i style="background:var(--live)"></i>Honest data</h3><p>Sample values are clearly labelled as sample data.</p></div>
   <div class="foot"><span class="brand"><span class="dot"></span>APU Campus Graph</span><span class="pg">09</span></div>
 </section>

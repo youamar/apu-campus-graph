@@ -31,7 +31,7 @@ describe('timeFit', () => {
   });
 
   it('is unknown with reason "Set your free times to check" when there is no profile', () => {
-    expect(timeFit(photo, null)).toEqual({ status: 'unknown', reason: 'Set your free times to check' });
+    expect(timeFit(photo, null)).toEqual({ status: 'unknown', reason: 'Set your free times to check', source: 'sample' });
   });
 
   it('is unknown when the profile has no free slots', () => {
@@ -116,5 +116,24 @@ describe('safeUrl', () => {
     expect(safeUrl(' JavaScript:alert(1)')).toBeNull();
     expect(safeUrl('ftp://a.b')).toBeNull();
     expect(safeUrl(undefined)).toBeNull();
+  });
+});
+
+describe('Provenance and ClubFacts', () => {
+  it('labels real vs sample in one place', async () => {
+    const { provenance } = await import('../data/provenance');
+    const { catalog } = await import('../data/catalog');
+    const football = catalog.find((c) => c.id === 'apu-football-club-afc')!;
+    const photoClub = catalog.find((c) => c.id === 'apu-photography-club')!;
+    expect(provenance(football)).toMatchObject({ schedule: 'official', finePrint: 'none', eligibility: 'none' });
+    expect(provenance(photoClub)).toMatchObject({ schedule: 'sample', finePrint: 'sample', flags: 'sample' });
+  });
+  it('clubFacts carries the fit source and a safe channel', async () => {
+    const { clubFacts } = await import('./facts');
+    const { catalog, events } = await import('../data/catalog');
+    const football = catalog.find((c) => c.id === 'apu-football-club-afc')!;
+    const f = clubFacts(football, { year: 1, level: 'degree', interests: [], free: [{ day: 'Fri', start: '18:00', end: '22:00' }], going: [], week: [] }, events);
+    expect(f.fit).toMatchObject({ status: 'clash', source: 'official' });
+    expect(f.channel.href).toMatch(/^(https:|mailto:)/);
   });
 });

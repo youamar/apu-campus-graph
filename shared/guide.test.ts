@@ -24,7 +24,8 @@ describe('localMatch', () => {
   });
   it('handles no match', () => {
     const r = localMatch('zzzz', catalog, null);
-    expect(r.focusIds).toEqual([]);
+    expect(r.focusIds.length).toBeLessThanOrEqual(3); // starter communities, never a fake match
+    expect(r.reply).toMatch(/couldn't find/i);
     expect(r.openId).toBeNull();
     expect(r.source).toBe('offline');
     expect(r.suggestions).toHaveLength(3);

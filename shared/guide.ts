@@ -1,6 +1,7 @@
-import type { Community } from '../src/data/types';
+import type { CampusEvent, Community } from '../src/data/types';
 import type { Profile } from '../src/profile/profile';
 import { timeFit } from '../src/card/fit';
+import { upcomingEvents } from '../src/data/provenance';
 
 export interface GuideReply {
   reply: string;
@@ -8,12 +9,24 @@ export interface GuideReply {
   openId: string | null;
   suggestions: string[];
   source: 'gemini' | 'offline';
+  /** Agent steps for the UI, e.g. 'Searched clubs', 'Read Photography Club', 'Checked the answer'. */
+  trace?: string[];
+  /** Actions the agent took for the student (server-verified), applied by the client. */
+  actions?: GuideAction[];
+}
+
+/** Add communities to the student's week; only ones whose schedule fits their free times. */
+export interface GuideAction {
+  type: 'add_to_week';
+  ids: string[];
 }
 
 const STOP = new Set(['club', 'clubs', 'apu', 'the', 'and', 'of', 'at', 'a', 'an', 'for', 'in', 'to', 'society', 'community', 'association', 'student', 'students']);
 const QUERY_STOP = new Set([
   ...STOP, 'i', 'me', 'my', 'want', 'love', 'like', 'how', 'do', 'can', 'join', 'is', 'are', 'there', 'any', 'with', 'some',
   'find', 'show', 'looking', 'look', 'what', 'which', 'something', 'anything', 'new', 'friends', 'make', 'get', 'into',
+  'you', 'your', 'now', 'all', 'ignore', 'previous', 'instructions', 'talk', 'tell', 'about', 'please', 'fit', 'fits', 'free', 'time',
+  'when', 'does', 'train', 'meet', 'where', 'who', 'this', 'that', 'week',
 ]);
 
 /** Query phrase -> interest tag (tags come from the catalog's TAG_KEYWORDS). */
@@ -78,7 +91,8 @@ function pickSuggestions(tags: string[], matched: Community[]): string[] {
   return out.slice(0, 3);
 }
 
-export function localMatch(query: string, catalog: Community[], profile: Profile | null): GuideReply {
+/** Scores every community against a free-text query; best first, only real matches (score > 0). */
+export function rankClubs(query: string, catalog: Community[], profile: Profile | null): { c: Community; score: number; hit: boolean }[] {
   const q = query.toLowerCase();
   const qWords = words(q);
   const qSet = new Set(qWords);
@@ -92,28 +106,76 @@ export function localMatch(query: string, catalog: Community[], profile: Profile
     const short = c.shortName.toLowerCase();
     const desc = c.description.toLowerCase();
     let score = 0;
-    for (const t of qTags) if (c.tags.includes(t)) score += 3;
-    for (const f of qCountries) if (nameL.includes(f)) score += 5;
+    let hit = false;
+    for (const t of qTags) if (c.tags.includes(t)) { score += 3; hit = true; }
+    for (const f of qCountries) if (nameL.includes(f)) { score += 5; hit = true; }
     const core = nameCore(c.name);
-    if (core.length && core.every((w) => qSet.has(w))) score += 6;
+    if (core.length && core.every((w) => qSet.has(w))) { score += 6; hit = true; }
     for (const t of terms) {
       const re = new RegExp(`\\b${esc(t)}`);
-      if (re.test(nameL) || re.test(short)) score += 3;
+      if (re.test(nameL) || re.test(short)) { score += 3; hit = true; }
       else if (re.test(desc)) score += 1;
     }
     // Profile bonuses only rank real matches; they never create one.
     if (score > 0) {
       if (c.tags.some((t) => interests.has(t))) score += 2;
-      if (profile && timeFit(c, profile).status === 'fits') score += 1;
+      // A fit on published meeting times outranks a fit on a sample schedule.
+      const fit = profile ? timeFit(c, profile) : null;
+      if (fit?.status === 'fits') score += fit.source === 'official' ? 2 : 1;
     }
-    return { c, score };
+    return { c, score, hit };
   });
 
-  const top = scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score || (a.c.id < b.c.id ? -1 : 1))
-    .slice(0, 4)
-    .map((s) => s.c);
+  return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score || (a.c.id < b.c.id ? -1 : 1));
+}
+
+/** Communities that share a tag with `seeds`, most active first: adjacent interests for a thin result. */
+export function relatedClubs(seeds: Community[], catalog: Community[], limit: number): Community[] {
+  const tags = new Set(seeds.flatMap((c) => c.tags));
+  const seen = new Set(seeds.map((c) => c.id));
+  return catalog
+    .filter((c) => !seen.has(c.id) && c.tags.some((t) => tags.has(t)))
+    .sort((a, b) => b.activity - a.activity || (a.id < b.id ? -1 : 1))
+    .slice(0, limit);
+}
+
+const EVENT_Q = /\b(this week|events?|happening|what'?s on|tonight|today|tomorrow|weekend)\b/i;
+
+export function localMatch(query: string, catalog: Community[], profile: Profile | null, events: CampusEvent[] = []): GuideReply {
+  if (EVENT_Q.test(query) && events.length) {
+    const now = Date.now();
+    const soon = upcomingEvents(events, now)
+      .slice(0, 4);
+    const ids = [...new Set(soon.map((e) => e.communityId))].filter((id) => catalog.some((c) => c.id === id));
+    if (ids.length) {
+      return {
+        reply: `For example, this week (sample events): ${soon.map((e) => e.title).join(', ')}. The brighter stars on the map are clubs with something coming up.`,
+        focusIds: ids,
+        openId: null,
+        suggestions: pickSuggestions([], []),
+        source: 'offline',
+      };
+    }
+  }
+  const q = query.toLowerCase();
+  const qWords = words(q);
+  const qTags = SYNONYMS.filter(([re]) => re.test(q)).map(([, t]) => t);
+  const all = rankClubs(query, catalog, profile);
+  // Only a tag, name or country hit is a real match; description words alone are weak hints.
+  const confident = all.some((s) => s.hit);
+  // With free times set, a community that clashes is never offered as a fit (unless nothing else matches).
+  const clash = (c: Community) => !!profile?.free.length && timeFit(c, profile).status === 'clash';
+  const pool = confident ? all.filter((s) => s.hit) : all;
+  const ranked = (pool.some((s) => !clash(s.c)) ? pool.filter((s) => !clash(s.c)) : pool).slice(0, 4);
+  const strong = ranked.map((s) => s.c);
+  // A thin result (e.g. one photography club) is padded with adjacent communities, so students still see options.
+  const starters = strong.length
+    ? []
+    : catalog
+        .filter((c) => c.beginnerFriendly || c.recruiting)
+        .sort((a, b) => b.activity - a.activity || (a.id < b.id ? -1 : 1))
+        .slice(0, 3);
+  const top = strong.length && strong.length < 3 ? [...strong, ...relatedClubs(strong, catalog, 3 - strong.length)] : strong.length ? strong : starters;
 
   // openId: only when the query contains a community's full name or shortName as a
   // word-bounded phrase ("apu" prefix optional). If several distinct communities match,
@@ -140,10 +202,20 @@ export function localMatch(query: string, catalog: Community[], profile: Profile
   const names = focus.map((id) => catalog.find((c) => c.id === id)!.shortName);
 
   let reply: string;
-  if (focus.length) {
-    const head = focus.length === 1 ? 'Here is 1 community that fits' : `Here are ${focus.length} communities that fit`;
+  if (focus.length && !strong.length) {
+    reply = `I couldn't find an exact match, so here are some welcoming places to start (sample data): ${names.join(', ')}. Or try the category filters, or ask about an interest like photography, football or coding.`;
+  } else if (focus.length) {
+    const padded = strong.length > 0 && top.length > strong.length;
+    const head = padded
+      ? `Here ${strong.length === 1 ? 'is the closest match' : 'are the closest matches'}, plus related communities`
+      : !confident
+        ? `I'm not sure about this one, but ${focus.length === 1 ? 'this community might be' : 'these communities might be'} related`
+        : focus.length === 1 ? 'Here is 1 community that fits' : `Here are ${focus.length} communities that fit`;
     reply = `${head}. I've lit them up on the map: ${names.join(', ')}.`;
-    if (open) reply += " I've opened its card.";
+    if (open) {
+      reply += " I've opened its card.";
+      if (open.official?.meetingTimes) reply += ` Published meeting times: ${open.official.meetingTimes}.`;
+    }
   } else {
     reply = "I couldn't find a match for that. Try the category filters (Societies, Sports, International) to browse everything, or ask about an interest like photography, football or coding.";
   }
