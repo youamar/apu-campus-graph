@@ -1,5 +1,4 @@
-import { hintText } from './hint';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { catalog, events } from '../data/catalog';
 import type { CategoryKey } from '../data/types';
@@ -19,7 +18,8 @@ import {
   type Rect,
 } from './draw';
 import Filters, { type FilterCounts } from './Filters';
-import { CATEGORY_COLOR, CATEGORY_NAME, capFocusZoom, labelSide, layoutNodes, matchCountLabel, matchesFilter, type GraphFilter } from './layout';
+import { CATEGORY_COLOR, labelSide, layoutNodes, matchCountLabel, type GraphFilter } from './layout';
+import { DIM_FOCUS, focusCamera, focusHint, focusOf, focusTitle, labelRank, nodeAlpha as viewAlpha, overviewCamera } from './view';
 import Legend from './Legend';
 import LiveTicker from './LiveTicker';
 import { toGraph } from './model';
@@ -39,26 +39,18 @@ export interface CampusGraphProps {
   rightInset?: number;
 }
 
-export interface CampusGraphHandle {
-  focus(ids: string[]): void;
-  reset(): void;
-}
-
-const DIM_FILTER = 0.15;
-const DIM_FOCUS = 0.2;
-/** Screen-space safe area the overview fits into, clear of the HTML overlays. */
-const SAFE = { top: 150, bottom: 64, left: 28, right: 28 };
-const LABEL_ZOOM = 2.5;
-/** Screen padding around a focused set; wide sides leave room for the labels. */
-const FOCUS_PAD = { top: 120, bottom: 90, left: 150, right: 170 };
-const FOCUS_MAX_ZOOM = 3.2;
-
 const endId = (e: string | PNode) => (typeof e === 'string' ? e : e.id);
 
-const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function CampusGraph(
-  { focusIds, focusSource, selectedId, filter, onSelect, onFilterChange, onReset, rightInset = 0 },
-  ref,
-) {
+export default function CampusGraph({
+  focusIds,
+  focusSource,
+  selectedId,
+  filter,
+  onSelect,
+  onFilterChange,
+  onReset,
+  rightInset = 0,
+}: CampusGraphProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<ForceGraphMethods<PNode, PLink> | undefined>(undefined);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -104,35 +96,16 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
     return () => ro.disconnect();
   }, []);
 
-  /** Zoom and centre that fit the whole graph into the area left free by the overlays. */
-  const overview = useCallback(() => {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const n of data.nodes) {
-      const r = nodeRadius(n) + (n.kind === 'hub' ? 6 : 2);
-      x0 = Math.min(x0, (n.x ?? 0) - r);
-      x1 = Math.max(x1, (n.x ?? 0) + r);
-      y0 = Math.min(y0, (n.y ?? 0) - r);
-      y1 = Math.max(y1, (n.y ?? 0) + r + (n.kind === 'hub' ? 40 : 0));
-    }
-    const aw = size.w - SAFE.left - SAFE.right;
-    const ah = size.h - SAFE.top - SAFE.bottom;
-    const k = Math.min(aw / (x1 - x0), ah / (y1 - y0));
-    // Graph point that must land at the canvas center so the bbox centers in the safe area.
-    const sx = SAFE.left + aw / 2 - size.w / 2;
-    const sy = SAFE.top + ah / 2 - size.h / 2;
-    return { k, cx: (x0 + x1) / 2 - sx / k, cy: (y0 + y1) / 2 - sy / k };
-  }, [data, size]);
-
   /** Fit the whole graph into the area left free by the overlays. */
   const fitAll = useCallback(
     (ms = 600) => {
       const fg = fgRef.current;
       if (!fg || !size.w) return;
-      const { k, cx, cy } = overview();
+      const { k, cx, cy } = overviewCamera(data.nodes, { w: size.w, h: size.h });
       fg.zoom(k, ms);
       fg.centerAt(cx, cy, ms);
     },
-    [overview, size],
+    [data, size],
   );
 
   /** Frame the focused nodes inside the area left of `rightInset`. */
@@ -140,29 +113,12 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
     (ids: string[], ms = 600) => {
       const fg = fgRef.current;
       if (!fg || !size.w) return;
-      const set = new Set(ids);
-      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      for (const n of data.nodes) {
-        if (!set.has(n.id)) continue;
-        x0 = Math.min(x0, n.x ?? 0);
-        x1 = Math.max(x1, n.x ?? 0);
-        y0 = Math.min(y0, n.y ?? 0);
-        y1 = Math.max(y1, n.y ?? 0);
-      }
-      if (x0 === Infinity) return;
-      const left = FOCUS_PAD.left;
-      // Beside an overlay, right-hand labels only need room up to its edge.
-      const right = rightInset > 0 ? rightInset + 110 : FOCUS_PAD.right;
-      const aw = Math.max(80, size.w - left - right);
-      const ah = Math.max(80, size.h - FOCUS_PAD.top - FOCUS_PAD.bottom);
-      // A single match (or a tight cluster) would otherwise zoom right in; keep its neighbourhood in view.
-      const k = capFocusZoom(Math.min(aw / Math.max(x1 - x0, 1), ah / Math.max(y1 - y0, 1), FOCUS_MAX_ZOOM), overview().k);
-      const sx = left + aw / 2 - size.w / 2;
-      const sy = FOCUS_PAD.top + ah / 2 - size.h / 2;
-      fg.zoom(k, ms);
-      fg.centerAt((x0 + x1) / 2 - sx / k, (y0 + y1) / 2 - sy / k, ms);
+      const cam = focusCamera(data.nodes, ids, { w: size.w, h: size.h }, rightInset);
+      if (!cam) return;
+      fg.zoom(cam.k, ms);
+      fg.centerAt(cam.cx, cam.cy, ms);
     },
-    [data, size, rightInset, overview],
+    [data, size, rightInset],
   );
 
   // Initial framing once the canvas has a size; refit on resize unless focused.
@@ -211,47 +167,20 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusIds]);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      focus(ids: string[]) {
-        setActiveFocus(ids);
-        if (ids.length) zoomToFocus(ids);
-      },
-      reset() {
-        setActiveFocus([]);
-        fitAll(600);
-      },
-    }),
-    [fitAll, zoomToFocus],
-  );
-
   // Per-frame render state, read from a ref so the canvas callbacks stay stable.
-  const focusIndex = useMemo(() => new Map(activeFocus.map((id, i) => [id, i + 1])), [activeFocus]);
-  const focusCats = useMemo(
-    () => new Set(activeFocus.map((id) => nodeById.get(id)?.category)),
-    [activeFocus, nodeById],
-  );
+  const focus = useMemo(() => focusOf(activeFocus, nodeById), [activeFocus, nodeById]);
+  const focusIndex = focus.index;
   const render = useRef({
+    focus,
     focusIndex,
-    focusCats,
     filter,
     selectedId,
     hoverId,
     labels: new Map<string, LabelPlacement>(),
   });
-  render.current = { ...render.current, focusIndex, focusCats, filter, selectedId, hoverId };
+  render.current = { ...render.current, focus, focusIndex, filter, selectedId, hoverId };
 
-  const nodeAlpha = useCallback((n: PNode) => {
-    const { focusIndex: fi, filter: f } = render.current;
-    if (fi.size) {
-      if (fi.has(n.id)) return 1;
-      // The hub that anchors the focused set stays legible; everything else recedes.
-      if (n.kind === 'hub' && render.current.focusCats.has(n.category)) return 0.9;
-      return DIM_FOCUS;
-    }
-    return matchesFilter(n, f) ? 1 : DIM_FILTER;
-  }, []);
+  const nodeAlpha = useCallback((n: PNode) => viewAlpha(n, render.current.focus, render.current.filter), []);
 
   const paintNode = useCallback(
     (node: PNode, ctx: CanvasRenderingContext2D, scale: number) => {
@@ -346,12 +275,7 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
         const alpha = nodeAlpha(n);
         if (alpha > 0.5) circles.push({ id: n.id, x: p.x, y: p.y, r: sr + 1 });
         const idx = fi.get(n.id) ?? 0;
-        const featured = n.community?.sample === true && !fi.size;
-        const rank =
-          idx > 0 ? 100 - idx : n.id === sel ? 90 : n.id === hov ? 85 :
-          alpha > 0.5 && n.live ? 70 : alpha > 0.5 && featured ? 50 :
-          // The brightest upcoming stars get a name when there is room; never forced.
-          alpha > 0.5 && !fi.size && n.upcoming >= 0.7 ? 40 : alpha > 0.5 && scale > LABEL_ZOOM ? 10 + n.size : -1;
+        const rank = labelRank(n, { focus: render.current.focus, selectedId: sel, hoverId: hov, alpha, scale });
         if (rank < 0) continue;
         cands.push({
           id: n.id,
@@ -417,10 +341,7 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
     onReset?.();
   };
 
-  const focusLabel = useMemo(() => {
-    const cats = new Set(activeFocus.map((id) => nodeById.get(id)?.category).filter(Boolean));
-    return cats.size === 1 ? CATEGORY_NAME[[...cats][0] as CategoryKey] : 'Across worlds';
-  }, [activeFocus, nodeById]);
+  const focusLabel = useMemo(() => focusTitle(activeFocus, nodeById), [activeFocus, nodeById]);
 
   const inFocus = activeFocus.length > 0;
 
@@ -493,7 +414,7 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
         {inFocus ? (
           <div className="cg-pill cg-hint">
             {focusSource === 'ai' && <span className="cg-spark" aria-hidden="true">✦</span>}
-            {hintText(activeFocus.length, counts.all, focusSource)}
+            {focusHint(activeFocus.length, counts.all, focusSource)}
             <span className="cg-muted">· Tap any node for details</span>
           </div>
         ) : (
@@ -507,6 +428,4 @@ const CampusGraph = forwardRef<CampusGraphHandle, CampusGraphProps>(function Cam
       </div>
     </div>
   );
-});
-
-export default CampusGraph;
+}

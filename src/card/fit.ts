@@ -1,4 +1,5 @@
 import type { Community, Slot } from '../data/types';
+import { provenance, type Source } from '../data/provenance';
 import type { Profile } from '../profile/profile';
 
 export const STUDENT_AFFAIRS_URL = 'https://studentaffairs.apu.edu.my/club-and-society/';
@@ -12,6 +13,8 @@ export interface JoinCheck {
 export interface FitCheck {
   status: 'fits' | 'clash' | 'unknown';
   reason: string;
+  /** Where the schedule behind this verdict comes from (Provenance). */
+  source: Source;
 }
 
 const toMin = (hhmm: string) => {
@@ -63,11 +66,12 @@ export function canJoin(c: Community, _p: Profile | null): JoinCheck {
 }
 
 export function timeFit(c: Community, p: Profile | null): FitCheck {
-  if (!c.schedule?.length) return { status: 'unknown', reason: 'Meeting times not published yet' };
-  if (!p || !p.free.length) return { status: 'unknown', reason: NO_FREE_TIMES };
+  const source = provenance(c).schedule;
+  if (!c.schedule?.length) return { status: 'unknown', reason: 'Meeting times not published yet', source };
+  if (!p || !p.free.length) return { status: 'unknown', reason: NO_FREE_TIMES, source };
   const clashes = c.schedule.filter((s) => !slotFits(s, p.free));
-  if (!clashes.length) return { status: 'fits', reason: 'Fits your timetable — no clashes' };
-  return { status: 'clash', reason: `Clashes with your free time: ${clashes.map(formatSlot).join(', ')}` };
+  if (!clashes.length) return { status: 'fits', reason: 'Fits your timetable — no clashes', source };
+  return { status: 'clash', reason: `Clashes with your free time: ${clashes.map(formatSlot).join(', ')}`, source };
 }
 
 /** Share (0..1) of the community's scheduled minutes that sit inside the profile's free time. */

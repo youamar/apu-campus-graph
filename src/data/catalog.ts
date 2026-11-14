@@ -1,5 +1,6 @@
 import raw from '../../data/clubs.json';
 import enrichmentJson from '../../data/enrichment.json';
+import { parseMeetingTimes } from './meetingTimes';
 import type { CampusEvent, CategoryKey, Community, Enrichment, RawClub, RawEvent } from './types';
 
 const GROUPS: Record<string, CategoryKey> = {
@@ -58,10 +59,19 @@ export function deriveTags(name: string, description: string, category: Category
   return tags.length ? tags : [CATEGORY_NAME[category]];
 }
 
-function hashActivity(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return (h % 4) + 1;
+export { parseMeetingTimes };
+
+/**
+ * Node size: how much a community publishes (real signals only, no made-up activity).
+ * Description depth, social/join links, published meeting times and eligibility each add a step.
+ */
+export function infoScore(r: RawClub): number {
+  let s = 1;
+  if ((r.description ?? '').length > 120) s++;
+  if (r.social || r.join_url) s++;
+  if (r.more_info_url) s++;
+  if (r.meeting_times || r.eligibility) s++;
+  return Math.min(s, 5);
 }
 
 function parseInstagram(social: string | null): string | undefined {
@@ -76,6 +86,7 @@ export function buildCatalog(rawClubs: RawClub[], enrichment: Enrichment): Commu
     const id = slugify(name);
     const category = GROUPS[r.group] ?? 'soc';
     const description = r.description ?? '';
+    const schedule = parseMeetingTimes(r.meeting_times);
     const base: Community = {
       id,
       name,
@@ -88,13 +99,28 @@ export function buildCatalog(rawClubs: RawClub[], enrichment: Enrichment): Commu
       joinUrl: r.join_url ?? undefined,
       subpageUrl: r.subpage_url ?? undefined,
       logoUrl: r.logo_url ?? undefined,
-      activity: hashActivity(id),
+      activity: infoScore(r),
       tags: deriveTags(name, description, category),
-      eligibility: { openToAll: true },
+      // Student Affairs: every club is open to all APU students; a published note is kept verbatim.
+      eligibility: { openToAll: true, ...(r.eligibility ? { note: r.eligibility } : {}) },
+      ...(schedule.length ? { schedule } : {}),
+      ...(r.meeting_times || r.eligibility
+        ? { official: { ...(r.meeting_times ? { meetingTimes: r.meeting_times } : {}), ...(r.eligibility ? { eligibility: r.eligibility } : {}) } }
+        : {}),
       sample: false,
     };
     const extra = enrichment.communities[id];
-    return extra ? { ...base, ...extra, id, sample: true } : base;
+    if (!extra) return base;
+    // Published (real) schedule and eligibility win over sample enrichment.
+    return {
+      ...base,
+      ...extra,
+      id,
+      activity: Math.max(base.activity, extra.activity ?? 0),
+      ...(schedule.length ? { schedule } : {}),
+      ...(r.eligibility ? { eligibility: base.eligibility } : {}),
+      sample: true,
+    };
   });
 }
 

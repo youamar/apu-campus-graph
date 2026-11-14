@@ -1,9 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
-import { localMatch, type GuideReply } from '../../shared/guide';
-import { catalog } from '../data/catalog';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import type { GuideReply } from '../../shared/guide';
+import { answerOffline, groundReply, SAFE_REPLY, toWire as toWireTurns, type TurnRole } from '../../shared/conversation';
+import type { Extracted } from '../data/extracted';
+import type { CampusEvent, Community } from '../data/types';
 import type { Profile } from '../profile/profile';
 
-export type ChatRole = 'user' | 'model';
+export type ChatRole = TurnRole;
 
 export interface ChatMsg {
   id: string;
@@ -15,6 +17,11 @@ export interface ChatMsg {
 
 export interface UseGuideOptions {
   profile: Profile | null;
+  /** The communities and events replies are grounded in (and answered from offline). */
+  catalog: Community[];
+  events: CampusEvent[];
+  /** Fine print read from club posts on this device; sent so the guide uses it. */
+  extracted?: Extracted;
   /** Called once per reply, after it is appended. */
   onReply?(reply: GuideReply): void;
 }
@@ -26,53 +33,22 @@ export interface UseGuide {
   last: GuideReply | null;
 }
 
-/** Server limits (server/chat.ts): at most 20 turns, 1000 chars each. */
-const MAX_MESSAGES = 20;
-const MAX_TEXT = 1000;
-
-/** The newest turns the server accepts, starting on a user turn, each clipped to the server's limit. */
-export function toWire(messages: ChatMsg[]): { role: ChatRole; text: string }[] {
-  let recent = messages.slice(-MAX_MESSAGES);
-  while (recent.length && recent[0].role !== 'user') recent = recent.slice(1);
-  return recent.map((m) => ({ role: m.role, text: m.text.slice(0, MAX_TEXT) }));
-}
-
-function isGuideReply(v: unknown): v is GuideReply {
-  const r = v as GuideReply;
-  return !!r && typeof r.reply === 'string' && Array.isArray(r.focusIds) && Array.isArray(r.suggestions);
-}
-
-/** Last-resort reply when both the server and the local matcher fail. */
-const SAFE_REPLY: GuideReply = {
-  reply: "I can't reach the guide right now. Try the category filters on the map to browse every community, or ask again in a moment.",
-  focusIds: [],
-  openId: null,
-  suggestions: ['Show me sports clubs', 'Any tech or coding communities?', 'Show international communities'],
-  source: 'offline',
-};
-
-const KNOWN_IDS = new Set(catalog.map((c) => c.id));
-
-/** Defence in depth: only ids that exist in the bundled catalog reach the graph and the card. */
-export function grounded(r: GuideReply): GuideReply {
-  const focusIds = [...new Set(r.focusIds.filter((id) => typeof id === 'string' && KNOWN_IDS.has(id)))];
-  const openId = r.openId && KNOWN_IDS.has(r.openId) ? r.openId : null;
-  const suggestions = r.suggestions.filter((s) => typeof s === 'string' && s.trim()).slice(0, 3);
-  return { ...r, focusIds, openId, suggestions, source: r.source === 'gemini' ? 'gemini' : 'offline' };
-}
+/** The newest turns the server accepts (shared contract), as plain wire turns. */
+export const toWire = (messages: ChatMsg[]) => toWireTurns(messages.map(({ role, text }) => ({ role, text })));
 
 let seq = 0;
 const nextId = () => `m${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
-export function useGuide({ profile, onReply }: UseGuideOptions): UseGuide {
+export function useGuide({ profile, catalog, events, extracted, onReply }: UseGuideOptions): UseGuide {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [pending, setPending] = useState(false);
   const [last, setLast] = useState<GuideReply | null>(null);
-  // Refs keep send() stable while always reading the latest history, profile and callback.
+  // Refs keep send() stable while always reading the latest history, inputs and callback.
   const history = useRef<ChatMsg[]>([]);
   const busy = useRef(false);
-  const latest = useRef({ profile, onReply });
-  latest.current = { profile, onReply };
+  const validIds = useMemo(() => new Set(catalog.map((c) => c.id)), [catalog]);
+  const latest = useRef({ profile, catalog, events, extracted, onReply, validIds });
+  latest.current = { profile, catalog, events, extracted, onReply, validIds };
 
   const send = useCallback(async (raw: string) => {
     const text = raw.trim();
@@ -84,28 +60,27 @@ export function useGuide({ profile, onReply }: UseGuideOptions): UseGuide {
     setMessages(history.current);
     setPending(true);
 
-    const prof = latest.current.profile;
+    const { profile: prof, catalog: cat, events: evs, extracted: ext, validIds } = latest.current;
+    const turns = toWire(history.current);
     let reply: GuideReply = SAFE_REPLY;
     try {
+      let fromServer: GuideReply | null = null;
       try {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: toWire(history.current), profile: prof }),
+          body: JSON.stringify({ messages: turns, profile: prof, ...(ext && Object.keys(ext).length ? { extracted: ext } : {}) }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const body: unknown = await res.json();
-        if (!isGuideReply(body)) throw new Error('Malformed reply');
-        reply = body;
-      } catch {
-        // Server unreachable or unhappy: answer from the bundled catalog instead of showing an error.
-        try {
-          reply = { ...localMatch(text, catalog, prof), source: 'offline' };
-        } catch {
-          reply = SAFE_REPLY;
+        if (res.ok) {
+          const body = (await res.json()) as { source?: unknown };
+          // Defence in depth: only catalog ids reach the graph and the card.
+          fromServer = groundReply(body, validIds, body?.source === 'gemini' ? 'gemini' : 'offline');
         }
+      } catch {
+        /* server unreachable: answer offline below */
       }
-      reply = grounded(reply);
+      // Same offline policy as the server (shared/conversation), with history and events.
+      reply = fromServer ?? groundReply(answerOffline(turns, { catalog: cat, events: evs, profile: prof }), validIds, 'offline') ?? SAFE_REPLY;
       const modelMsg: ChatMsg = { id: nextId(), role: 'model', text: reply.reply, reply };
       history.current = [...history.current, modelMsg];
       setMessages(history.current);

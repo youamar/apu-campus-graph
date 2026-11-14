@@ -5,21 +5,25 @@ import request from 'supertest';
 import rawClubs from '../data/clubs.json';
 import { catalog, events } from '../src/data/catalog';
 import type { Profile } from '../src/profile/profile';
-import { buildSystemPrompt, createChatHandler, parseGuideResponse, type ChatPrompt } from './chat';
+import { parseGuideJson as parseGuideResponse } from '../shared/conversation';
+import { createChatHandler } from './chat';
+import { buildSystemPrompt } from './prompt';
+import type { StepPrompt as ChatPrompt } from './step';
 
 const validIds = new Set(catalog.map((c) => c.id));
 
 function appWith(generate: ((p: ChatPrompt, signal: AbortSignal) => Promise<string>) | null, timeoutMs?: number) {
   const app = express();
   app.use(express.json({ limit: '6mb' }));
-  app.post('/api/chat', createChatHandler({ generate, timeoutMs }));
+  const step = generate ? async (p: ChatPrompt, signal: AbortSignal) => ({ text: await generate(p, signal) }) : null;
+  app.post('/api/chat', createChatHandler({ step, timeoutMs }));
   return app;
 }
 
 const ask = (text: string, profile: Profile | null = null) => ({ messages: [{ role: 'user', text }], profile });
 
 describe('buildSystemPrompt', () => {
-  const prompt = buildSystemPrompt(catalog, events);
+  const prompt = buildSystemPrompt(catalog);
 
   it('asks for 3-5 related communities on open-ended questions and the named one plus up to 2 related', () => {
     expect(prompt).toMatch(/open-ended interest or discovery question[^\n]*3-5 related communities/i);
@@ -40,40 +44,26 @@ describe('buildSystemPrompt', () => {
     for (const p of presidents) expect(prompt).not.toContain(p);
   });
 
-  it('describes what each club does and how to join', () => {
+  it('sends only an index: details and sample values must come from tools', () => {
     const photo = catalog.find((c) => c.id === 'apu-photography-club')!;
-    expect(photo.description.length).toBeGreaterThan(10);
-    expect(prompt).toContain(photo.description.slice(0, 60));
     const line = prompt.split('\n').find((l) => l.startsWith('apu-photography-club |'))!;
-    expect(line).toMatch(/join: /);
-    expect(line).toMatch(/beginner-friendly/);
-    expect(line).toMatch(/recruiting/);
-  });
-
-  it('caps long descriptions', () => {
-    const long = { ...catalog[0], id: 'long-one', description: 'word '.repeat(200), finePrint: undefined, joinUrl: 'https://x.test/join' };
-    const line = buildSystemPrompt([long], []).split('\n').find((l) => l.startsWith('long-one |'))!;
-    expect(line.length).toBeLessThan(600);
-    expect(line).toContain('join: via https://x.test/join');
+    expect(line.split(' | ')).toHaveLength(4);
+    expect(prompt).not.toContain(photo.description.slice(0, 60));
+    expect(prompt.slice(prompt.indexOf('\nCATALOG INDEX ('))).not.toMatch(/RM \d/);
+    expect(prompt).toMatch(/get_club/);
+    expect(prompt).toMatch(/upcoming_events/);
   });
 
   it('tells the model to hedge sample join steps and fine print', () => {
-    const rules = prompt.slice(0, prompt.indexOf('CATALOG ('));
+    const rules = prompt.slice(0, prompt.indexOf('\nCATALOG INDEX ('));
     expect(rules).toMatch(/sample/i);
     for (const word of ['join', 'fee', 'deadline', 'slots', 'eligibility']) expect(rules).toMatch(new RegExp(word, 'i'));
     expect(rules).toMatch(/for example/i);
     expect(rules).toMatch(/never .*real procedure/i);
   });
 
-  it('tags a sample club join step as (sample) and keeps its real link', () => {
-    const line = prompt.split('\n').find((l) => l.startsWith('apu-photography-club |'))!;
-    const join = line.split(' | ').find((f) => f.startsWith('join: '))!;
-    expect(join).toContain('(sample)');
-    expect(join).toMatch(/link: https:\/\//);
-  });
-
   it('carries the grounding rules', () => {
-    expect(prompt).toMatch(/only from the CATALOG/i);
+    expect(prompt).toMatch(/only from the CATALOG INDEX and tool results/i);
     expect(prompt).toMatch(/Never invent communities, fees or dates/i);
     expect(prompt).toMatch(/under 90 words/i);
   });
@@ -181,7 +171,7 @@ describe('POST /api/chat', () => {
     await request(appWith(generate)).post('/api/chat').send({ messages, profile });
     // last 8 are m3..m10; m3 is a model turn, so the window starts at m4
     expect(seen!.contents).toHaveLength(7);
-    expect(seen!.contents[0]).toEqual({ role: 'user', parts: [{ text: 'm4' }] });
+    expect(seen!.contents[0]).toEqual({ role: 'user', parts: [{ text: '<student_message>m4</student_message>' }] });
     expect(seen!.contents[1].role).toBe('model');
     const last = seen!.contents[6];
     expect(last.role).toBe('user');

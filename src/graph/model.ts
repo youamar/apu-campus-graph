@@ -1,3 +1,4 @@
+import { UPCOMING_WINDOW_MS } from '../data/provenance';
 import type { CampusEvent, CategoryKey, Community } from '../data/types';
 
 export interface GNode {
@@ -44,7 +45,7 @@ function sameLocalDay(a: Date, b: Date): boolean {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const UPCOMING_DAYS = 7;
+const UPCOMING_DAYS = UPCOMING_WINDOW_MS / DAY_MS;
 
 /** 1 within a day, linear down to 0 at UPCOMING_DAYS; 0 for past or later events. */
 export function upcomingScore(startMs: number, nowMs: number): number {

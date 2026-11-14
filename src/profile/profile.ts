@@ -1,6 +1,8 @@
 import type { Slot } from '../data/types';
 
 export type Level = 'foundation' | 'diploma' | 'degree' | 'masters';
+export const LEVELS: Level[] = ['foundation', 'diploma', 'degree', 'masters'];
+export const DAYS: Slot['day'][] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export interface Profile {
   year: 1 | 2 | 3 | 4;

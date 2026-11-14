@@ -20,7 +20,7 @@ export default function Legend() {
         </span>
       ))}
       <span className="cg-legend-sep" aria-hidden="true" />
-      <span className="cg-muted">Bigger node = more active · Events are sample data</span>
+      <span className="cg-muted">Bigger node = more info published · Events are sample data</span>
     </div>
   );
 }

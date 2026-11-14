@@ -3,8 +3,9 @@ import type { GuideReply } from '../shared/guide';
 import DetailCard from './card/DetailCard';
 import ChatPanel from './chat/ChatPanel';
 import { catalog, events } from './data/catalog';
-import type { CampusEvent } from './data/types';
-import CampusGraph, { type CampusGraphHandle } from './graph/CampusGraph';
+import { applyExtracted, loadExtracted, saveExtracted, type Extracted } from './data/extracted';
+import type { CampusEvent, FinePrint } from './data/types';
+import CampusGraph from './graph/CampusGraph';
 import type { GraphFilter } from './graph/layout';
 import { emptyProfile, loadProfile, saveProfile, toggleId, type Profile } from './profile/profile';
 import ProfileSheet from './profile/ProfileSheet';
@@ -91,10 +92,20 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(() => devParam('card'));
   const [profile, setProfile] = useState<Profile | null>(loadProfile);
   const [profileOpen, setProfileOpen] = useState(() => devParam('profile') === '1');
-  const graphRef = useRef<CampusGraphHandle>(null);
   const isMobile = useMediaQuery(MOBILE_QUERY);
 
-  const selected = useMemo(() => catalog.find((c) => c.id === selectedId) ?? null, [selectedId]);
+  // Fine print read from club posts on this device overrides sample fine print (card + guide).
+  const [extracted, setExtracted] = useState<Extracted>(() => loadExtracted(new Set(catalog.map((c) => c.id))));
+  const liveCatalog = useMemo(() => applyExtracted(catalog, extracted), [extracted]);
+  const onExtracted = useCallback((id: string, fp: FinePrint) => {
+    setExtracted((e) => {
+      const next = { ...e, [id]: fp };
+      saveExtracted(next);
+      return next;
+    });
+  }, []);
+
+  const selected = useMemo(() => liveCatalog.find((c) => c.id === selectedId) ?? null, [selectedId, liveCatalog]);
 
   useEffect(() => {
     if (profile) saveProfile(profile);
@@ -113,6 +124,13 @@ export default function App() {
     (r: GuideReply) => {
       if (r.focusIds.length) focusGraph(r.focusIds, r.source === 'gemini' ? 'ai' : 'user');
       if (r.openId) setSelectedId(r.openId);
+      // Agent action: add (never remove) the verified communities to the student's week.
+      const adds = r.actions?.filter((a) => a.type === 'add_to_week').flatMap((a) => a.ids) ?? [];
+      if (adds.length)
+        setProfile((p) => {
+          const base = p ?? emptyProfile();
+          return { ...base, week: [...new Set([...base.week, ...adds])] };
+        });
     },
     [focusGraph],
   );
@@ -191,7 +209,6 @@ export default function App() {
       <main className="main">
         <section className="graph-area" aria-label="Campus communities graph">
           <CampusGraph
-            ref={graphRef}
             focusIds={focusIds}
             focusSource={focusSource}
             selectedId={selectedId}
@@ -212,12 +229,15 @@ export default function App() {
                 onToggleGoing={toggleGoing}
                 onToggleWeek={toggleWeek}
                 onEditProfile={openProfile}
+                events={events}
+                onExtracted={onExtracted}
               />
             </div>
           )}
         </section>
         <ChatPanel
-          catalog={catalog}
+          catalog={liveCatalog}
+          extracted={extracted}
           events={events}
           profile={profile}
           onReply={onGuideReply}

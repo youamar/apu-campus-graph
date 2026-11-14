@@ -11,3 +11,6 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Wake the server's Gemini connection while the student is still looking at the map.
+fetch('/api/warm').catch(() => {});
